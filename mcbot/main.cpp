@@ -88,13 +88,13 @@ public:
             //BuildGraph();
     }
 
-    // This needs to be improved. It only adds edges to walkable flat area directly nearby.
     void BuildGraph() {
         const int SearchRadius = 16 * 3;
         Vector3d position = m_Client->GetPlayerController()->GetPosition();
 
         static const std::vector<Vector3d> directions = {
-            Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, -1, 0), Vector3d(0, 1, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1)
+            Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, -1, 0), Vector3d(0, 1, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1), // Directly nearby in flat area
+            Vector3d(-1, 1, 0), Vector3d(1, 1, 0), Vector3d(0, 1, -1), Vector3d(0, 1, 1) // Up one step
         };
 
         this->Destroy();
@@ -134,6 +134,54 @@ public:
     }
 };
 
+class AttackUpdate : public ClientListener {
+private:
+    GameClient* m_Client;
+    Minecraft::PlayerPtr m_Target;
+    s64 m_LastAttack;
+
+    const double AttackRangeSq = 4 * 4;
+    const s64 AttackDelay = 1000;
+
+public:
+    AttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
+        : m_Client(client),
+          m_Target(target),
+          m_LastAttack(0)
+    {
+        m_Client->RegisterListener(this);
+    }
+
+    ~AttackUpdate() {
+        m_Client->UnregisterListener(this);
+    }
+
+    void OnTick() {
+        s64 time = util::GetTime();
+
+        if (time < m_LastAttack + AttackDelay) return;
+        if (!m_Target || !m_Target->GetEntity()) return;
+
+        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
+        Vector3d targetPos = m_Target->GetEntity()->GetPosition();
+
+        if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
+
+        using namespace Minecraft::Packets::Outbound;
+
+        // Send arm swing
+        AnimationPacket animationPacket;
+        m_Client->GetConnection()->SendPacket(&animationPacket);
+
+        // Send attack
+        UseEntityPacket useEntityPacket(m_Target->GetEntity()->GetEntityId(), UseEntityPacket::Action::Attack);
+        m_Client->GetConnection()->SendPacket(&useEntityPacket);
+
+        m_LastAttack = time;
+    }
+
+};
+
 class BotUpdate : public ClientListener {
 private:
     GameClient* m_Client;
@@ -142,9 +190,10 @@ private:
     s64 m_StartupTime;
     bool m_Built;
     ai::path::Plan* m_Plan;
+    std::shared_ptr<AttackUpdate> m_AttackUpdate;
 
     // Player is 0.3 wide, so it should only need to be within 0.2 of center of block to ensure no wall sticking. 0.15 is safer though.
-    const double CenterTolerance = 0.15;
+    const double CenterToleranceSq = 0.15 * 0.15;
 
 public:
     BotUpdate(GameClient* client)
@@ -168,10 +217,18 @@ public:
 
         Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
 
-        if (targetPlayer != nullptr) {
+        if (targetPlayer == nullptr) {
+            if (m_AttackUpdate) {
+                m_AttackUpdate.reset();
+            }
+        } else {
             Minecraft::EntityPtr entity = targetPlayer->GetEntity();
 
             if (entity != nullptr) {
+                if (!m_AttackUpdate) {
+                    m_AttackUpdate = std::make_shared<AttackUpdate>(m_Client, targetPlayer);
+                }
+
                 target = entity->GetPosition();
 
                 if (util::GetTime() > m_StartupTime + 5000) {
@@ -199,7 +256,7 @@ public:
 
                             Vector3d toPlan = planPos - botPos;
 
-                            if (toPlan.LengthSq() <= CenterTolerance) {
+                            if (toPlan.LengthSq() <= CenterToleranceSq) {
                                 if (m_Plan->HasNext()) {
                                     current = m_Plan->Next();
                                     continue;
