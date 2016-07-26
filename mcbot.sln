@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mcbot", "mcbot\mcbot.vcxproj", "{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug-Fast|Win32 = Debug-Fast|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Debug|Win32.Build.0 = Debug|Win32
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Debug-Fast|Win32.ActiveCfg = Debug-Fast|Win32
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Debug-Fast|Win32.Build.0 = Debug-Fast|Win32
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Release|Win32.ActiveCfg = Release|Win32
+		{70A1A00B-BE7F-4EF2-8D5F-90A07D3F192A}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
