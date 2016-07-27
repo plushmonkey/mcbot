@@ -42,6 +42,7 @@ public:
 
     float GetWeight() { return m_Weight; }
 
+    Node* GetNode(std::size_t index) { return m_Nodes[index]; }
     Node* GetConnected(Node* from);
     void LinkNodes(Node* first, Node* second);
 };
@@ -69,6 +70,12 @@ public:
         if (m_Iterator == m_Path.end()) return nullptr;
         return *m_Iterator;
     }
+
+    Node* GetGoal() {
+        if (m_Path.empty()) return nullptr;
+        return m_Path.back();
+    }
+
     Node* Next() {
         Node* result = *m_Iterator;
         ++m_Iterator;

@@ -115,12 +115,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GameClient.cpp" />
+    <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathing.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameClient.h" />
+    <ClInclude Include="Inventory.h" />
     <ClInclude Include="Pathing.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>

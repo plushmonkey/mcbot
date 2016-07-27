@@ -1,5 +1,6 @@
 #include "Pathing.h"
-
+#include <iostream>
+#include "Utility.h"
 namespace ai {
 namespace path {
 
@@ -13,9 +14,10 @@ Node::Node(Vector3i position)
 std::vector<Node*> Node::GetNeighbors() {
     std::vector<Node*> neighbors;
     for (Edge* edge : m_Edges) {
-        Node* connected = edge->GetConnected(this);
-        if (connected)
-            neighbors.push_back(connected);
+        Node* to = edge->GetNode(1);
+        if (to == nullptr || to == this)
+            continue;
+        neighbors.push_back(to);
     }
     return neighbors;
 }
@@ -192,6 +194,10 @@ void Graph::Destroy() {
 Node* Graph::FindClosest(const Vector3i& pos) {
     if (m_Nodes.empty()) return nullptr;
 
+    auto find = m_Nodes.find(pos);
+    if (find != m_Nodes.end())
+        return find->second;
+
     Node* closest = nullptr;
     float length = std::numeric_limits<float>::max();
 
@@ -211,8 +217,14 @@ Node* Graph::FindClosest(const Vector3i& pos) {
 }
 
 Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
+    s64 startTime = util::GetTime();
+
     Node* startNode = FindClosest(start);
     Node* endNode = FindClosest(end);
+
+    s64 endTime = util::GetTime();
+
+    std::cout << "Find time: " << (endTime - startTime) << std::endl;
 
     AStar algorithm;
 
@@ -225,10 +237,6 @@ Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
 }
 
 void Graph::LinkNodes(Node* first, Node* second) {
-    std::vector<Node*> neighbors = first->GetNeighbors();
-    // This might not be needed. A lot more edges get created if it's removed.
-    if (std::find(neighbors.begin(), neighbors.end(), second) != neighbors.end()) return;
-
     Edge* edge = new Edge(1.0);
 
     edge->LinkNodes(first, second);

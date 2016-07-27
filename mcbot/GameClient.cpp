@@ -12,13 +12,14 @@ GameClient::GameClient()
     m_PlayerManager(&m_Dispatcher, &m_EntityManager),
     m_World(&m_Dispatcher),
     m_PlayerController(&m_Connection, m_World, m_PlayerManager),
+    m_Inventories(&m_Dispatcher, &m_Connection),
     m_Connected(false)
 {
     m_Connection.RegisterListener(this);
 }
 
 GameClient::~GameClient() {
-
+    m_Connection.UnregisterListener(this);
 }
 
 void GameClient::OnSocketStateChange(Network::Socket::Status newState) {

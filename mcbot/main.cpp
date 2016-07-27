@@ -42,7 +42,7 @@ public:
 class WorldGraph : public ai::path::Graph, public Minecraft::WorldListener {
 private:
     GameClient* m_Client;
-    int chunksReceived = 0;
+    bool m_NeedsBuilt;
 
     ai::path::Node* GetNode(Vector3d pos) {
         Vector3i iPos = ToVector3i(pos);
@@ -72,9 +72,29 @@ private:
         return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
     }
 
+    int IsSafeFall(Vector3d pos) {
+        Minecraft::World* world = m_Client->GetWorld();
+
+        Minecraft::BlockPtr checkBlock = world->GetBlock(ToVector3i(pos));
+
+        Minecraft::BlockPtr aBlock = world->GetBlock(ToVector3i(pos + Vector3d(0, 1, 0)));
+
+        if (!checkBlock || checkBlock->IsSolid()) return 0;
+        if (!aBlock || aBlock->IsSolid()) return 0;
+
+        for (int i = 0; i < 4; ++i) {
+            Minecraft::BlockPtr bBlock = world->GetBlock(ToVector3i(pos - Vector3d(0, i+1, 0)));
+
+            if (bBlock && bBlock->IsSolid()) return i + 1;
+        }
+
+        return 0;
+    }
+
 public:
     WorldGraph(GameClient* client)
-        : m_Client(client)
+        : m_Client(client),
+          m_NeedsBuilt(false)
     {
         client->GetWorld()->RegisterListener(this);
     }
@@ -84,17 +104,21 @@ public:
     }
 
     void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex) {
-        //if (++chunksReceived > 16)
-            //BuildGraph();
+        m_NeedsBuilt = true;
     }
 
     void BuildGraph() {
+        if (!m_NeedsBuilt) return;
+        m_NeedsBuilt = false;
+
         const int SearchRadius = 16 * 3;
+        const int YSearchRadius = 16;
         Vector3d position = m_Client->GetPlayerController()->GetPosition();
 
         static const std::vector<Vector3d> directions = {
             Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, -1, 0), Vector3d(0, 1, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1), // Directly nearby in flat area
-            Vector3d(-1, 1, 0), Vector3d(1, 1, 0), Vector3d(0, 1, -1), Vector3d(0, 1, 1) // Up one step
+            Vector3d(-1, 1, 0), Vector3d(1, 1, 0), Vector3d(0, 1, -1), Vector3d(0, 1, 1), // Up one step
+            Vector3d(-1, -1, 0), Vector3d(1, -1, 0), Vector3d(0, -1, -1), Vector3d(0, -1, 1) // Down one step
         };
 
         this->Destroy();
@@ -105,7 +129,9 @@ public:
 
         Minecraft::World* world = m_Client->GetWorld();
         for (int x = -SearchRadius; x < SearchRadius; ++x) {
-            for (int y = -SearchRadius; y < SearchRadius; ++y) {
+            for (int y = -YSearchRadius; y < YSearchRadius; ++y) {
+                int checkY = position.y + y;
+                if (checkY <= 0 || checkY >= 256) continue;
                 for (int z = -SearchRadius; z < SearchRadius; ++z) {
                     Vector3d checkPos = position + Vector3d(x, y, z);
 
@@ -118,12 +144,29 @@ public:
                         for (Vector3d direction : directions) {
                             Vector3d neighborPos = checkPos + direction;
 
-                            if (IsWalkable(neighborPos)) {
+                            if (IsWalkable(neighborPos) || (IsSafeFall(neighborPos) && direction.y == 0)) {
                                 ai::path::Node* current = GetNode(checkPos);
                                 ai::path::Node* neighborNode = GetNode(neighborPos);
 
                                 LinkNodes(current, neighborNode);
                             }
+                        }
+                    } else {
+                        int fallDist = IsSafeFall(checkPos);
+                        if (fallDist <= 0) continue;
+
+                        ai::path::Node* current = GetNode(checkPos);
+
+                        for (int i = 0; i < fallDist; ++i) {
+                            Vector3d fallPos = checkPos - Vector3d(0, i + 1, 0);
+
+                            Minecraft::BlockPtr block = world->GetBlock(fallPos);
+                            if (!block || block->IsSolid()) break;
+
+                            ai::path::Node* neighborNode = GetNode(fallPos);
+
+                            LinkNodes(current, neighborNode);
+                            current = neighborNode;
                         }
                     }
                 }
@@ -215,6 +258,9 @@ public:
     void OnTick() {
         Vector3d target;
 
+        m_Client->GetPlayerController()->SetTargetPosition(Vector3d(0, 0, 0));
+        m_Client->GetPlayerController()->SetHandleFall(false);
+
         Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
 
         if (targetPlayer == nullptr) {
@@ -238,7 +284,7 @@ public:
                     }
 
                     Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
-                    if (m_Plan == nullptr || !m_Plan->HasNext()) {
+                    if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != ToVector3i(targetPlayer->GetEntity()->GetPosition())) {
                         s64 startTime = util::GetTime();
 
                         m_Plan = m_Graph.FindPath(ToVector3i(botPos), ToVector3i(target));
@@ -255,8 +301,9 @@ public:
                             Vector3d planPos = ToVector3d(current->GetPosition()) + Vector3d(0.5, 0, 0.5);
 
                             Vector3d toPlan = planPos - botPos;
+                            Minecraft::BlockPtr belowPlanBlock = m_Client->GetWorld()->GetBlock(planPos - Vector3d(0, 1, 0));
 
-                            if (toPlan.LengthSq() <= CenterToleranceSq) {
+                            if (toPlan.LengthSq() <= CenterToleranceSq) {// || (belowPlanBlock && !belowPlanBlock->IsSolid())) {
                                 if (m_Plan->HasNext()) {
                                     current = m_Plan->Next();
                                     continue;
@@ -266,7 +313,21 @@ public:
                             }
                             
                             std::cout << planPos << std::endl;
-                            m_Client->GetPlayerController()->SetTargetPosition(planPos);
+                            Vector3d planDirection = Vector3Normalize(toPlan);
+                            const double WalkSpeed = 4.3;
+                            double moveSpeed = WalkSpeed * 1.4;
+
+                            if (belowPlanBlock && !belowPlanBlock->IsSolid())
+                                moveSpeed *= 2.5;
+
+                            Vector3d delta = planDirection * moveSpeed * (50.0 / 1000.0);
+                            double toPlanDist = toPlan.Length();
+
+                            if (delta.Length() > toPlanDist)
+                                delta = Vector3Normalize(delta) * toPlanDist;
+
+                            m_Client->GetPlayerController()->Move(delta);
+                            //m_Client->GetPlayerController()->SetTargetPosition(planPos);
                             target = planPos;
                             break;
                         }
@@ -276,6 +337,7 @@ public:
                 }
             }
         }
+
         m_Client->GetPlayerController()->LookAt(target);
     }
 };
