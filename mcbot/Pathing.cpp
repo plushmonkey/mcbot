@@ -1,6 +1,7 @@
 #include "Pathing.h"
-#include <iostream>
+
 #include "Utility.h"
+
 namespace ai {
 namespace path {
 
@@ -217,14 +218,8 @@ Node* Graph::FindClosest(const Vector3i& pos) {
 }
 
 Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
-    s64 startTime = util::GetTime();
-
     Node* startNode = FindClosest(start);
     Node* endNode = FindClosest(end);
-
-    s64 endTime = util::GetTime();
-
-    std::cout << "Find time: " << (endTime - startTime) << std::endl;
 
     AStar algorithm;
 

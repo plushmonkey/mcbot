@@ -3,6 +3,9 @@
 
 #include <mclib/Common.h>
 
+#undef min
+#undef max
+
 namespace util {
 
 s64 GetTime();

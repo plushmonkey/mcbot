@@ -234,7 +234,7 @@ private:
     bool m_Built;
     ai::path::Plan* m_Plan;
     std::shared_ptr<AttackUpdate> m_AttackUpdate;
-
+    
     // Player is 0.3 wide, so it should only need to be within 0.2 of center of block to ensure no wall sticking. 0.15 is safer though.
     const double CenterToleranceSq = 0.15 * 0.15;
 
@@ -303,7 +303,7 @@ public:
                             Vector3d toPlan = planPos - botPos;
                             Minecraft::BlockPtr belowPlanBlock = m_Client->GetWorld()->GetBlock(planPos - Vector3d(0, 1, 0));
 
-                            if (toPlan.LengthSq() <= CenterToleranceSq) {// || (belowPlanBlock && !belowPlanBlock->IsSolid())) {
+                            if (toPlan.LengthSq() <= CenterToleranceSq) {
                                 if (m_Plan->HasNext()) {
                                     current = m_Plan->Next();
                                     continue;
@@ -315,10 +315,10 @@ public:
                             std::cout << planPos << std::endl;
                             Vector3d planDirection = Vector3Normalize(toPlan);
                             const double WalkSpeed = 4.3;
-                            double moveSpeed = WalkSpeed * 1.4;
+                            double moveSpeed = WalkSpeed;
 
                             if (belowPlanBlock && !belowPlanBlock->IsSolid())
-                                moveSpeed *= 2.5;
+                                moveSpeed *= 2;
 
                             Vector3d delta = planDirection * moveSpeed * (50.0 / 1000.0);
                             double toPlanDist = toPlan.Length();
@@ -327,7 +327,6 @@ public:
                                 delta = Vector3Normalize(delta) * toPlanDist;
 
                             m_Client->GetPlayerController()->Move(delta);
-                            //m_Client->GetPlayerController()->SetTargetPosition(planPos);
                             target = planPos;
                             break;
                         }

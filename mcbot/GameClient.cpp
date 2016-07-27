@@ -36,7 +36,9 @@ bool GameClient::login(std::string host, unsigned short port, std::string name, 
 }
 
 void GameClient::run() {
-    s64 lastUpdate = 0;
+    const s64 TickDelay = 1000/20;
+    const s64 MaximumUpdates = 3;
+    s64 lastUpdate = util::GetTime();
 
     while (m_Connected) {
         try {
@@ -47,13 +49,18 @@ void GameClient::run() {
 
         s64 time = util::GetTime();
 
-        if (time < lastUpdate + 1000 / 20) {
+        if (time < lastUpdate + TickDelay) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
 
-        lastUpdate = time;
-        m_PlayerController.Update();
-        NotifyListeners(&ClientListener::OnTick);
+        s64 updateCount = (time - lastUpdate) / TickDelay;
+
+        lastUpdate += TickDelay * updateCount;
+
+        for (s64 i = 0; i < std::min(updateCount, MaximumUpdates); ++i) {
+            m_PlayerController.Update();
+            NotifyListeners(&ClientListener::OnTick);
+        }
     }
 }
