@@ -6,18 +6,27 @@
 #include <mclib/Connection.h>
 
 class Inventory {
+public:
+    static const s32 HOTBAR_SLOT_START = 36;
+
 private:
     Minecraft::Connection* m_Connection;
     std::map<s32, Minecraft::Slot> m_Inventory;
     int m_WindowId;
+    s32 m_SelectedHotbarIndex;
 
 public:
     Inventory(Minecraft::Connection* connection, int windowId);
 
     Minecraft::Slot* GetSlot(s32 index);
 
-    // Sends a packet telling server to change the slot
-    void SetSlot(s32 index, Minecraft::Slot slot);
+    // Returns item slot index
+    s32 FindItemById(s32 itemId);
+
+    s32 GetSelectedHotbarSlot() const { return m_SelectedHotbarIndex; }
+
+    // Select the hotbar slot to use. 0-8
+    void SelectHotbarSlot(s32 hotbarIndex);
 
     friend class InventoryManager;
 };

@@ -174,43 +174,94 @@ public:
         }
 
         std::cout << "Graph built in " << (util::GetTime() - startTime) << "ms.\n";
+        std::cout << "Nodes: " << m_Nodes.size() << std::endl;
+        std::cout << "Edges: " << m_Edges.size() << std::endl;
     }
 };
 
 class AttackUpdate : public ClientListener {
-private:
+protected:
     GameClient* m_Client;
     Minecraft::PlayerPtr m_Target;
+    s64 m_AttackDelay;
     s64 m_LastAttack;
-
-    const double AttackRangeSq = 4 * 4;
-    const s64 AttackDelay = 1000;
+    
 
 public:
-    AttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
+    AttackUpdate(GameClient* client, Minecraft::PlayerPtr target, s64 attackDelay) 
         : m_Client(client),
           m_Target(target),
+          m_AttackDelay(attackDelay),
           m_LastAttack(0)
     {
         m_Client->RegisterListener(this);
     }
 
-    ~AttackUpdate() {
+    virtual ~AttackUpdate() {
         m_Client->UnregisterListener(this);
     }
 
     void OnTick() {
         s64 time = util::GetTime();
 
-        if (time < m_LastAttack + AttackDelay) return;
+        if (time < m_LastAttack + m_AttackDelay) return;
         if (!m_Target || !m_Target->GetEntity()) return;
 
+        Attack();
+
+        m_LastAttack = time;
+    }
+
+    virtual void Attack() = 0;
+
+    bool SelectItem(s32 id) {
+        std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
+
+        Minecraft::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+
+        if (!slot || slot->GetItemId() != id) {
+            s32 itemIndex = inventory->FindItemById(id);
+
+            std::cout << "Selecting item id " << id << std::endl;
+            if (itemIndex == -1) {
+                std::cout << "Not carrying item with id of " << id << std::endl;
+                return false;
+            }
+
+            // todo: Swap the bow into a hotbar slot if it isn't there
+
+            s32 hotbarIndex = itemIndex - Inventory::HOTBAR_SLOT_START;
+            m_Client->GetInventory()->SelectHotbarSlot(hotbarIndex);
+        }
+
+        return true;
+    }
+};
+
+class MeleeAttackUpdate : public AttackUpdate {
+private:
+    const double AttackRangeSq = 4 * 4;
+
+    enum { AttackDelay = 1000 };
+
+public:
+    MeleeAttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
+        : AttackUpdate(client, target, AttackDelay)
+    {
+        
+    }
+
+    void Attack() {
         Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
         Vector3d targetPos = m_Target->GetEntity()->GetPosition();
 
         if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
 
         using namespace Minecraft::Packets::Outbound;
+
+        const s32 StoneSwordId = 272;
+
+        SelectItem(StoneSwordId);
 
         // Send arm swing
         AnimationPacket animationPacket;
@@ -219,10 +270,69 @@ public:
         // Send attack
         UseEntityPacket useEntityPacket(m_Target->GetEntity()->GetEntityId(), UseEntityPacket::Action::Attack);
         m_Client->GetConnection()->SendPacket(&useEntityPacket);
+    }
+};
 
-        m_LastAttack = time;
+class BowAttackUpdate : public AttackUpdate {
+private:
+    enum { AttackDelay = 1 };
+    enum { DrawLength = 3000 };
+    enum { ShootDelay = 1000 };
+
+    enum State {
+        Drawing,
+        Idle
+    };
+
+    State m_State;
+    s64 m_StateStart;
+
+public:
+    BowAttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
+        : AttackUpdate(client, target, AttackDelay),
+          m_State(Idle)
+    {
+
     }
 
+    void Attack() {
+        s64 time = util::GetTime();
+        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
+        Vector3d targetPos = m_Target->GetEntity()->GetPosition();
+
+        using namespace Minecraft::Packets::Outbound;
+
+        if ((targetPos - botPos).LengthSq() < 5*5) return;
+
+        const s32 BowId = 261;
+
+        if (!SelectItem(BowId)) {
+            m_StateStart = time;
+            m_State = State::Idle;
+            return;
+        }
+
+        if (m_State == State::Idle && time >= m_StateStart + ShootDelay) {
+            std::cout << "Drawing bow\n";
+            m_StateStart = time;
+            m_State = State::Drawing;
+
+            s32 selectedSlot = m_Client->GetInventory()->GetSelectedHotbarSlot();
+            Minecraft::Slot* slot = m_Client->GetInventory()->GetSlot(selectedSlot + Inventory::HOTBAR_SLOT_START);
+
+            PlayerBlockPlacementPacket bowDrawPacket(Vector3i(-1, -1, -1), 255, *slot, Vector3i(0, 0, 0));
+            m_Client->GetConnection()->SendPacket(&bowDrawPacket);
+        }
+
+        if (m_State == State::Drawing && time >= m_StateStart + DrawLength) {
+            std::cout << "Shooting bow\n";
+            m_StateStart = time;
+            m_State = State::Idle;
+            
+            PlayerDiggingPacket shootPacket(PlayerDiggingPacket::Status::ShootArrow, Vector3i(0, 0, 0), 0);
+            m_Client->GetConnection()->SendPacket(&shootPacket);
+        }
+    }
 };
 
 class BotUpdate : public ClientListener {
@@ -233,7 +343,8 @@ private:
     s64 m_StartupTime;
     bool m_Built;
     ai::path::Plan* m_Plan;
-    std::shared_ptr<AttackUpdate> m_AttackUpdate;
+    std::shared_ptr<AttackUpdate> m_MeleeUpdate;
+    std::shared_ptr<AttackUpdate> m_BowUpdate;
     
     // Player is 0.3 wide, so it should only need to be within 0.2 of center of block to ensure no wall sticking. 0.15 is safer though.
     const double CenterToleranceSq = 0.15 * 0.15;
@@ -256,6 +367,7 @@ public:
     }
 
     void OnTick() {
+        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
         Vector3d target;
 
         m_Client->GetPlayerController()->SetTargetPosition(Vector3d(0, 0, 0));
@@ -264,15 +376,19 @@ public:
         Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
 
         if (targetPlayer == nullptr) {
-            if (m_AttackUpdate) {
-                m_AttackUpdate.reset();
-            }
+            m_MeleeUpdate.reset();
+            m_BowUpdate.reset();
         } else {
             Minecraft::EntityPtr entity = targetPlayer->GetEntity();
 
             if (entity != nullptr) {
-                if (!m_AttackUpdate) {
-                    m_AttackUpdate = std::make_shared<AttackUpdate>(m_Client, targetPlayer);
+
+                if (!m_BowUpdate) {
+                    m_BowUpdate = std::make_shared<BowAttackUpdate>(m_Client, targetPlayer);
+                }
+
+                if (!m_MeleeUpdate) {
+                    m_MeleeUpdate = std::make_shared<MeleeAttackUpdate>(m_Client, targetPlayer);
                 }
 
                 target = entity->GetPosition();
@@ -282,8 +398,7 @@ public:
                         m_Graph.BuildGraph();
                         m_Built = true;
                     }
-
-                    Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
+                    
                     if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != ToVector3i(targetPlayer->GetEntity()->GetPosition())) {
                         s64 startTime = util::GetTime();
 
@@ -327,7 +442,7 @@ public:
                                 delta = Vector3Normalize(delta) * toPlanDist;
 
                             m_Client->GetPlayerController()->Move(delta);
-                            target = planPos;
+                            //target = planPos;
                             break;
                         }
                     } else {

@@ -4,7 +4,8 @@
 
 Inventory::Inventory(Minecraft::Connection* connection, int windowId)
     : m_WindowId(windowId),
-      m_Connection(connection)
+      m_Connection(connection),
+      m_SelectedHotbarIndex(0)
 {
     
 }
@@ -13,6 +14,24 @@ Minecraft::Slot* Inventory::GetSlot(s32 index) {
     auto iter = m_Inventory.find(index);
     if (iter == m_Inventory.end()) return nullptr;
     return &iter->second;
+}
+
+s32 Inventory::FindItemById(s32 itemId) {
+    auto iter = std::find_if(m_Inventory.begin(), m_Inventory.end(), [&](const std::pair<s32, Minecraft::Slot>& slot) {
+        return slot.second.GetItemId() == itemId;
+    });
+
+    if (iter == m_Inventory.end()) return -1;
+    return iter->first;
+}
+
+void Inventory::SelectHotbarSlot(s32 hotbarIndex) {
+    if (m_WindowId != 0 || hotbarIndex < 0 || hotbarIndex > 8 || m_SelectedHotbarIndex == hotbarIndex) return;
+
+    m_SelectedHotbarIndex = hotbarIndex;
+
+    Minecraft::Packets::Outbound::HeldItemChangePacket heldItemPacket(hotbarIndex);
+    m_Connection->SendPacket(&heldItemPacket);
 }
 
 InventoryManager::InventoryManager(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection)
