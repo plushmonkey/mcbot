@@ -119,7 +119,7 @@ public:
             m_GoalCost = 0;
         }
 
-        m_HeuristicCost = (m_Node->GetPosition() - m_Goal->GetPosition()).Length();
+        m_HeuristicCost = (float)(m_Node->GetPosition() - m_Goal->GetPosition()).Length();
         m_FitnessCost = m_GoalCost + m_HeuristicCost;
     }
 

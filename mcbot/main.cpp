@@ -175,7 +175,7 @@ public:
         Minecraft::World* world = m_Client->GetWorld();
         for (int x = -SearchRadius; x < SearchRadius; ++x) {
             for (int y = -YSearchRadius; y < YSearchRadius; ++y) {
-                int checkY = position.y + y;
+                int checkY = (int)position.y + y;
                 if (checkY <= 0 || checkY >= 256) continue;
                 for (int z = -SearchRadius; z < SearchRadius; ++z) {
                     Vector3i checkPos = position + Vector3i(x, y, z);
@@ -364,7 +364,7 @@ public:
         Vector3d bowPos = botPos + Vector3d(0, 1, 0);
         Vector3d toTarget = (targetPos + Vector3d(0, 1, 0)) - bowPos;
 
-        CastResult cast = RayCast(m_Client->GetWorld(), bowPos, toTarget, toTarget.Length());
+        CastResult cast = RayCast(m_Client->GetWorld(), bowPos, toTarget, (std::size_t)toTarget.Length());
         // Stop the current attack unless it's almost ready to fire
         if (!cast.full && (m_State != State::Drawing || time < m_StateStart + DrawLength * .90)) {
             m_State = State::Idle;

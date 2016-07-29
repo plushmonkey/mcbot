@@ -38,7 +38,7 @@ Edge* Node::FindNodeEdge(Node* other) {
 float Node::GetCostFrom(Node* node) {
     Edge* edge = FindNodeEdge(node);
     Vector3i toNode = node->GetPosition() - GetPosition();
-    return toNode.Length() * edge->GetWeight();
+    return (float)(toNode.Length() * edge->GetWeight());
 }
 
 Node* Edge::GetConnected(Node* from) {
@@ -173,7 +173,7 @@ Node* Graph::FindClosest(const Vector3i& pos) {
         Node* node = entry.second;
 
         Vector3i toPos = pos - node->GetPosition();
-        float checkLength = toPos.Length();
+        float checkLength = (float)toPos.Length();
 
         if (checkLength < length) {
             closest = node;
