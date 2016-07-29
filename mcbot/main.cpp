@@ -77,15 +77,13 @@ private:
     GameClient* m_Client;
     bool m_NeedsBuilt;
 
-    ai::path::Node* GetNode(Vector3d pos) {
-        Vector3i iPos = ToVector3i(pos);
-
-        auto iter = m_Nodes.find(iPos);
+    ai::path::Node* GetNode(Vector3i pos) {
+        auto iter = m_Nodes.find(pos);
 
         ai::path::Node* node = nullptr;
         if (iter == m_Nodes.end()) {
-            node = new ai::path::Node(iPos);
-            m_Nodes[iPos] = node;
+            node = new ai::path::Node(pos);
+            m_Nodes[pos] = node;
         } else {
             node = iter->second;
         }
@@ -94,34 +92,42 @@ private:
     }
 
     // The check pos is not solid, the block above is not solid, and the block below is solid
-    bool IsWalkable(Vector3d pos) {
+    bool IsWalkable(Vector3i pos) {
         Minecraft::World* world = m_Client->GetWorld();
 
-        Minecraft::BlockPtr checkBlock = world->GetBlock(ToVector3i(pos));
+        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
 
-        Minecraft::BlockPtr aBlock = world->GetBlock(ToVector3i(pos + Vector3d(0, 1, 0)));
-        Minecraft::BlockPtr bBlock = world->GetBlock(ToVector3i(pos - Vector3d(0, 1, 0)));
+        Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
+        Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0));
 
         return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
     }
 
-    int IsSafeFall(Vector3d pos) {
+    int IsSafeFall(Vector3i pos) {
         Minecraft::World* world = m_Client->GetWorld();
 
-        Minecraft::BlockPtr checkBlock = world->GetBlock(ToVector3i(pos));
+        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
 
-        Minecraft::BlockPtr aBlock = world->GetBlock(ToVector3i(pos + Vector3d(0, 1, 0)));
+        Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
 
         if (!checkBlock || checkBlock->IsSolid()) return 0;
         if (!aBlock || aBlock->IsSolid()) return 0;
 
         for (int i = 0; i < 4; ++i) {
-            Minecraft::BlockPtr bBlock = world->GetBlock(ToVector3i(pos - Vector3d(0, i+1, 0)));
+            Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i+1, 0));
 
             if (bBlock && bBlock->IsSolid()) return i + 1;
+            //if (bBlock && bBlock->IsSolid() || (bBlock->GetType() == 8 || bBlock->GetType() == 9)) return i + 1;
         }
 
         return 0;
+    }
+
+    bool IsWater(Vector3i pos) {
+        Minecraft::World* world = m_Client->GetWorld();
+        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
+
+        return checkBlock && (checkBlock->GetType() == 8 || checkBlock->GetType() == 9);
     }
 
 public:
@@ -144,17 +150,23 @@ public:
         if (!m_NeedsBuilt) return;
         m_NeedsBuilt = false;
 
-        const int SearchRadius = 16 * 3;
+        const int SearchRadius = 16 * 4;
         const int YSearchRadius = 32;
-        Vector3d position = m_Client->GetPlayerController()->GetPosition();
+        Vector3i position = ToVector3i(m_Client->GetPlayerController()->GetPosition());
 
-        static const std::vector<Vector3d> directions = {
-            Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, -1, 0), Vector3d(0, 1, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1), // Directly nearby in flat area
-            Vector3d(-1, 1, 0), Vector3d(1, 1, 0), Vector3d(0, 1, -1), Vector3d(0, 1, 1), // Up one step
-            Vector3d(-1, -1, 0), Vector3d(1, -1, 0), Vector3d(0, -1, -1), Vector3d(0, -1, 1) // Down one step
+        static const std::vector<Vector3i> directions = {
+            Vector3i(-1, 0, 0), Vector3i(1, 0, 0), Vector3i(0, -1, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1), Vector3i(0, 0, 1), // Directly nearby in flat area
+            Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1), // Up one step
+            Vector3i(-1, -1, 0), Vector3i(1, -1, 0), Vector3i(0, -1, -1), Vector3i(0, -1, 1) // Down one step
+        };
+        static const std::vector<Vector3i> waterDirections = {
+            Vector3i(-1, 0, 0), Vector3i(1, 0, 0), Vector3i(0, -1, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1), Vector3i(0, 0, 1), // Directly nearby in flat area
+            Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1),
         };
         
         this->Destroy();
+
+        m_Edges.reserve(70000);
 
         std::cout << "Building graph\n";
 
@@ -166,22 +178,34 @@ public:
                 int checkY = position.y + y;
                 if (checkY <= 0 || checkY >= 256) continue;
                 for (int z = -SearchRadius; z < SearchRadius; ++z) {
-                    Vector3d checkPos = position + Vector3d(x, y, z);
+                    Vector3i checkPos = position + Vector3i(x, y, z);
 
-                    Minecraft::BlockPtr checkBlock = world->GetBlock(ToVector3i(checkPos));
+                    Minecraft::BlockPtr checkBlock = world->GetBlock(checkPos);
 
                     // Skip because it's not loaded yet or it's solid
                     if (!checkBlock || checkBlock->IsSolid()) continue;
 
                     if (IsWalkable(checkPos)) {
-                        for (Vector3d direction : directions) {
-                            Vector3d neighborPos = checkPos + direction;
+                        for (Vector3i direction : directions) {
+                            Vector3i neighborPos = checkPos + direction;
 
                             if (IsWalkable(neighborPos) || (IsSafeFall(neighborPos) && direction.y == 0)) {
                                 ai::path::Node* current = GetNode(checkPos);
                                 ai::path::Node* neighborNode = GetNode(neighborPos);
 
                                 LinkNodes(current, neighborNode);
+                            }
+                        }
+                    } else if (IsWater(checkPos)) {
+                        for (Vector3i direction : waterDirections) {
+                            Vector3i neighborPos = checkPos + direction;
+
+                            if (IsWalkable(neighborPos) || IsWater(neighborPos)) {
+                                ai::path::Node* current = GetNode(checkPos);
+                                ai::path::Node* neighborNode = GetNode(neighborPos);
+
+                                LinkNodes(current, neighborNode, 4.0);
+                                LinkNodes(neighborNode, current, 4.0);
                             }
                         }
                     } else {
@@ -191,7 +215,7 @@ public:
                         ai::path::Node* current = GetNode(checkPos);
 
                         for (int i = 0; i < fallDist; ++i) {
-                            Vector3d fallPos = checkPos - Vector3d(0, i + 1, 0);
+                            Vector3i fallPos = checkPos - Vector3i(0, i + 1, 0);
 
                             Minecraft::BlockPtr block = world->GetBlock(fallPos);
                             if (!block || block->IsSolid()) break;
@@ -481,6 +505,9 @@ public:
 
                             if (belowPlanBlock && !belowPlanBlock->IsSolid())
                                 moveSpeed *= 2;
+                            Minecraft::BlockPtr currentBlock = m_Client->GetWorld()->GetBlock(botPos);
+                            if (currentBlock && (currentBlock->GetType() == 8 || currentBlock->GetType() == 9))
+                                moveSpeed = WalkSpeed / 2;
 
                             Vector3d delta = planDirection * moveSpeed * (50.0 / 1000.0);
                             double toPlanDist = toPlan.Length();

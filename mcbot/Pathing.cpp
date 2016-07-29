@@ -68,13 +68,13 @@ Plan* AStar::operator()(Node* start, Node* goal) {
 
     AddToOpenSet(start, nullptr);
 
-    while (!m_OpenSet.empty()) {
-        PlanningNode* node = m_OpenSet.front();
+    while (!m_OpenSet.Empty()) {
+        PlanningNode* node = m_OpenSet.Pop();
 
         if (node->GetNode() == goal)
             return BuildPath(node);
 
-        m_OpenSet.pop_front();
+        //m_OpenSet.pop_front();
         node->SetClosed(true);
 
         std::vector<Node*> neighbors = node->GetNode()->GetNeighbors();
@@ -99,7 +99,8 @@ Plan* AStar::operator()(Node* start, Node* goal) {
 
             if (isBetter) {
                 planNode->SetPrevious(node);
-                ReinsertNode(planNode);
+                m_OpenSet.Update();
+                //ReinsertNode(planNode);
             }
         }
     }
@@ -129,49 +130,15 @@ PlanningNode* AStar::AddToOpenSet(Node* node, PlanningNode* prev) {
     auto iter = m_NodeMap.find(node);
     if (iter == m_NodeMap.end()) {
         planNode = new PlanningNode(prev, node, m_Goal);
-        m_NodeMap[node] = planNode;
+        m_NodeMap.insert(std::pair<Node*, PlanningNode*>(node, planNode));
+        m_OpenSet.Push(planNode);
     } else {
         planNode = iter->second;
         planNode->SetClosed(false);
+        m_OpenSet.Update();
     }
-
-    InsertNode(planNode);
-    return planNode;
-}
-
-void AStar::InsertNode(PlanningNode* node) {
-    if (m_OpenSet.empty()) {
-        m_OpenSet.push_back(node);
-        return;
-    }
-
-    auto iter = m_OpenSet.begin();
-    PlanningNode* current = *iter;
     
-    while (current->IsBetterThan(node)) {
-        ++iter;
-
-        if (iter != m_OpenSet.end())
-            current = *iter;
-        else
-            break;
-    }
-
-    m_OpenSet.insert(iter, node);
-}
-
-void AStar::ReinsertNode(PlanningNode* node) {
-    std::deque<PlanningNode*>::iterator iter;
-
-    for (iter = m_OpenSet.begin(); iter != m_OpenSet.end(); ++iter) {
-        if (node == *iter) {
-            m_OpenSet.erase(iter);
-            InsertNode(node);
-            return;
-        }
-    }
-
-    InsertNode(node);
+    return planNode;
 }
 
 Graph::~Graph() {
@@ -231,11 +198,11 @@ Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
     return plan;
 }
 
-void Graph::LinkNodes(Node* first, Node* second) {
+void Graph::LinkNodes(Node* first, Node* second, float weight) {
     std::vector<Node*> neighbors = first->GetNeighbors();
     if (std::find(neighbors.begin(), neighbors.end(), second) != neighbors.end()) return;
 
-    Edge* edge = new Edge(1.0);
+    Edge* edge = new Edge(weight);
 
     edge->LinkNodes(first, second);
 

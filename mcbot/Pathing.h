@@ -4,6 +4,7 @@
 #include <functional>
 #include <deque>
 #include <map>
+#include <list>
 
 #include <mclib/Common.h>
 
@@ -127,16 +128,43 @@ public:
     }
 };
 
+template <typename T, typename Compare, typename Container = std::vector<T>>
+class PriorityQueue {
+private:
+    Container m_Container;
+    Compare m_Comp;
+
+public:
+    void Push(T item) {
+        m_Container.push_back(item);
+        std::push_heap(m_Container.begin(), m_Container.end(), m_Comp);
+    }
+
+    T Pop() {
+        T item = m_Container.front();
+        std::pop_heap(m_Container.begin(), m_Container.end(), m_Comp);
+        m_Container.pop_back();
+        return item;
+    }
+
+    void Update() {
+        std::make_heap(m_Container.begin(), m_Container.end(), m_Comp);
+    }
+
+    bool Empty() const { return m_Container.empty(); }
+};
+
+struct PlanningNodeComparator {
+    bool operator()(PlanningNode* first, PlanningNode* second) {
+        return !first->IsBetterThan(second);
+    }
+};
+
 class AStar {
 private:
     std::map<Node*, PlanningNode*> m_NodeMap;
-    std::deque<PlanningNode*> m_OpenSet;
+    PriorityQueue<PlanningNode*, PlanningNodeComparator> m_OpenSet;
     Node* m_Goal;
-
-    // Insert into priority queue
-    void InsertNode(PlanningNode* node);
-    // Recalculates position in priority queue
-    void ReinsertNode(PlanningNode* node);
 
     PlanningNode* AddToOpenSet(Node* node, PlanningNode* prev);
 
@@ -153,7 +181,7 @@ protected:
     std::map<Vector3i, Node*> m_Nodes;
     std::vector<Edge*> m_Edges;
 
-    void LinkNodes(Node* first, Node* second);
+    void LinkNodes(Node* first, Node* second, float weight = 1.0);
 public:
     ~Graph();
 
