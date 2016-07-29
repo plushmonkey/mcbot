@@ -8,6 +8,39 @@
 #include "Pathing.h"
 #include "Utility.h"
 
+struct CastResult {
+    std::vector<Vector3i> hit;
+    std::size_t length;
+    bool full;
+};
+
+CastResult RayCast(Minecraft::World* world, const Vector3d& from, Vector3d direction, std::size_t length) {
+    CastResult result;
+
+    std::vector<Vector3i> hit(length);
+
+    direction.Normalize();
+    result.length = length;
+    result.full = true;
+
+    for (std::size_t i = 0; i < length; ++i) {
+        Vector3i check = ToVector3i(from + (direction * i));
+        Minecraft::BlockPtr block = world->GetBlock(check);
+
+        if (block && !block->IsSolid()) {
+            hit.push_back(check);
+        } else {
+            result.full = false;
+            result.length = i;
+            break;
+        }
+    }
+
+    result.hit = hit;
+
+    return result;
+}
+
 class PlayerList : public Minecraft::PlayerListener {
 private:
     Minecraft::PlayerManager* m_PlayerManager;
@@ -112,7 +145,7 @@ public:
         m_NeedsBuilt = false;
 
         const int SearchRadius = 16 * 3;
-        const int YSearchRadius = 16;
+        const int YSearchRadius = 32;
         Vector3d position = m_Client->GetPlayerController()->GetPosition();
 
         static const std::vector<Vector3d> directions = {
@@ -120,7 +153,7 @@ public:
             Vector3d(-1, 1, 0), Vector3d(1, 1, 0), Vector3d(0, 1, -1), Vector3d(0, 1, 1), // Up one step
             Vector3d(-1, -1, 0), Vector3d(1, -1, 0), Vector3d(0, -1, -1), Vector3d(0, -1, 1) // Down one step
         };
-
+        
         this->Destroy();
 
         std::cout << "Building graph\n";
@@ -276,8 +309,8 @@ public:
 class BowAttackUpdate : public AttackUpdate {
 private:
     enum { AttackDelay = 1 };
-    enum { DrawLength = 3000 };
-    enum { ShootDelay = 1000 };
+    enum { DrawLength = 1500 };
+    enum { ShootDelay = 750 };
 
     enum State {
         Drawing,
@@ -304,15 +337,29 @@ public:
 
         if ((targetPos - botPos).LengthSq() < 5*5) return;
 
-        const s32 BowId = 261;
+        Vector3d bowPos = botPos + Vector3d(0, 1, 0);
+        Vector3d toTarget = (targetPos + Vector3d(0, 1, 0)) - bowPos;
 
-        if (!SelectItem(BowId)) {
-            m_StateStart = time;
+        CastResult cast = RayCast(m_Client->GetWorld(), bowPos, toTarget, toTarget.Length());
+        // Stop the current attack unless it's almost ready to fire
+        if (!cast.full && (m_State != State::Drawing || time < m_StateStart + DrawLength * .90)) {
             m_State = State::Idle;
-            return;
+
+            m_StateStart = time;
+            const s32 StoneSwordId = 272;
+
+            SelectItem(StoneSwordId);
         }
 
         if (m_State == State::Idle && time >= m_StateStart + ShootDelay) {
+            const s32 BowId = 261;
+
+            if (!SelectItem(BowId)) {
+                m_StateStart = time;
+                m_State = State::Idle;
+                return;
+            }
+
             std::cout << "Drawing bow\n";
             m_StateStart = time;
             m_State = State::Drawing;
@@ -328,7 +375,7 @@ public:
             std::cout << "Shooting bow\n";
             m_StateStart = time;
             m_State = State::Idle;
-            
+
             PlayerDiggingPacket shootPacket(PlayerDiggingPacket::Status::ShootArrow, Vector3i(0, 0, 0), 0);
             m_Client->GetConnection()->SendPacket(&shootPacket);
         }
@@ -462,7 +509,7 @@ int main(void) {
     GameClient game;
     BotUpdate update(&game);
 
-    game.login("127.0.0.1", 25565, "pathfinder", "pw");
+    game.login("127.0.0.1", 25565, "bot", "pw");
     game.run();
 
     return 0;

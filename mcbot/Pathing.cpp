@@ -232,6 +232,9 @@ Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
 }
 
 void Graph::LinkNodes(Node* first, Node* second) {
+    std::vector<Node*> neighbors = first->GetNeighbors();
+    if (std::find(neighbors.begin(), neighbors.end(), second) != neighbors.end()) return;
+
     Edge* edge = new Edge(1.0);
 
     edge->LinkNodes(first, second);
