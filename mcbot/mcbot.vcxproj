@@ -115,17 +115,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="GameClient.cpp" />
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathing.cpp" />
+    <ClCompile Include="PhysicsComponent.cpp" />
+    <ClCompile Include="Steering.cpp" />
+    <ClCompile Include="SynchronizationComponent.cpp" />
     <ClCompile Include="Utility.cpp" />
+    <ClCompile Include="WorldGraph.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Actor.h" />
+    <ClInclude Include="Collision.h" />
+    <ClInclude Include="Component.h" />
+    <ClInclude Include="Decision.h" />
     <ClInclude Include="GameClient.h" />
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="Pathing.h" />
+    <ClInclude Include="PhysicsComponent.h" />
+    <ClInclude Include="Steering.h" />
+    <ClInclude Include="SynchronizationComponent.h" />
     <ClInclude Include="Utility.h" />
+    <ClInclude Include="WorldGraph.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

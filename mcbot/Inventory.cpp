@@ -40,6 +40,7 @@ InventoryManager::InventoryManager(Minecraft::Packets::PacketDispatcher* dispatc
 {
     using namespace Minecraft::Protocol;
     dispatcher->RegisterHandler(State::Play, Play::SetSlot, this);
+    dispatcher->RegisterHandler(State::Play, Play::HeldItemChange, this);
     dispatcher->RegisterHandler(State::Play, Play::WindowItems, this);
 }
 
@@ -77,4 +78,16 @@ void InventoryManager::HandlePacket(Minecraft::Packets::Inbound::WindowItemsPack
     for (std::size_t i = 0; i < slots.size(); ++i) {
         SetSlot(packet->GetWindowId(), i, slots[i]);
     }
+}
+
+void InventoryManager::HandlePacket(Minecraft::Packets::Inbound::HeldItemChangePacket* packet) {
+    auto iter = m_Inventories.find(Inventory::PLAYER_INVENTORY_ID);
+
+    if (iter == m_Inventories.end()) {
+        auto inventory = std::make_shared<Inventory>(m_Connection, Inventory::PLAYER_INVENTORY_ID);
+
+        iter = m_Inventories.insert(std::make_pair(Inventory::PLAYER_INVENTORY_ID, inventory)).first;
+    }
+
+    iter->second->SelectHotbarSlot(packet->GetSlot());
 }

@@ -1,6 +1,7 @@
 #include "Pathing.h"
 
 #include "Utility.h"
+#include <iostream>
 
 namespace ai {
 namespace path {
@@ -12,8 +13,9 @@ Node::Node(Vector3i position)
 }
 
 // Follow all of the edges to grab any immediately connected nodes
-std::vector<Node*> Node::GetNeighbors() {
+std::vector<Node*> Node::GetNeighbors() const {
     std::vector<Node*> neighbors;
+    neighbors.reserve(16);
     for (Edge* edge : m_Edges) {
         Node* to = edge->GetNode(1);
         if (to == nullptr || to == this)
@@ -27,7 +29,7 @@ void Node::AddEdge(Edge* edge) {
     m_Edges.push_back(edge);
 }
 
-Edge* Node::FindNodeEdge(Node* other) {
+Edge* Node::FindNodeEdge(Node* other) const {
     for (Edge* edge : m_Edges) {
         if (edge->GetConnected(this) == other)
             return edge;
@@ -35,13 +37,13 @@ Edge* Node::FindNodeEdge(Node* other) {
     return nullptr;
 }
 
-float Node::GetCostFrom(Node* node) {
+float Node::GetCostFrom(Node* node) const {
     Edge* edge = FindNodeEdge(node);
-    Vector3i toNode = node->GetPosition() - GetPosition();
-    return (float)(toNode.Length() * edge->GetWeight());
+    double dist = (node->GetPosition() - GetPosition()).Length();
+    return (float)(dist * edge->GetWeight());
 }
 
-Node* Edge::GetConnected(Node* from) {
+Node* Edge::GetConnected(const Node* from) const {
     if (from == m_Nodes[0])
         return m_Nodes[1];
     return m_Nodes[0];
@@ -74,7 +76,6 @@ Plan* AStar::operator()(Node* start, Node* goal) {
         if (node->GetNode() == goal)
             return BuildPath(node);
 
-        //m_OpenSet.pop_front();
         node->SetClosed(true);
 
         std::vector<Node*> neighbors = node->GetNode()->GetNeighbors();
@@ -90,17 +91,11 @@ Plan* AStar::operator()(Node* start, Node* goal) {
             if (find != m_NodeMap.end())
                 planNode = find->second;
 
-            bool isBetter = false;
-
-            if (!planNode)
+            if (!planNode) {
                 planNode = AddToOpenSet(neighbor, node);
-            else if (cost < planNode->GetGoalCost())
-                isBetter = true;
-
-            if (isBetter) {
+            } else if (cost < planNode->GetGoalCost()) {
                 planNode->SetPrevious(node);
                 m_OpenSet.Update();
-                //ReinsertNode(planNode);
             }
         }
     }
@@ -111,7 +106,7 @@ Plan* AStar::operator()(Node* start, Node* goal) {
 Plan* AStar::BuildPath(PlanningNode* goal) {
     Plan* plan = new Plan();
     std::vector<PlanningNode*> path;
-
+    path.reserve(64);
     PlanningNode* node = goal;
     while (node) {
         path.push_back(node);
@@ -130,7 +125,8 @@ PlanningNode* AStar::AddToOpenSet(Node* node, PlanningNode* prev) {
     auto iter = m_NodeMap.find(node);
     if (iter == m_NodeMap.end()) {
         planNode = new PlanningNode(prev, node, m_Goal);
-        m_NodeMap.insert(std::pair<Node*, PlanningNode*>(node, planNode));
+        m_NodeMap.insert(std::make_pair(node, planNode));
+
         m_OpenSet.Push(planNode);
     } else {
         planNode = iter->second;
@@ -159,13 +155,16 @@ void Graph::Destroy() {
     m_Edges.clear();
 }
 
-Node* Graph::FindClosest(const Vector3i& pos) {
+Node* Graph::FindClosest(const Vector3i& pos) const {
     if (m_Nodes.empty()) return nullptr;
 
     auto find = m_Nodes.find(pos);
     if (find != m_Nodes.end())
         return find->second;
 
+    /*
+    // Slow lookup. Disable and assume no reasonable path if pos is not a traversable node.
+    // Maybe do spatial lookups to find an acceptable nearby node.
     Node* closest = nullptr;
     float length = std::numeric_limits<float>::max();
 
@@ -181,12 +180,15 @@ Node* Graph::FindClosest(const Vector3i& pos) {
         }
     }
 
-    return closest;
+    return closest;*/
+    return nullptr;
 }
 
-Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) {
+Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) const {
     Node* startNode = FindClosest(start);
     Node* endNode = FindClosest(end);
+
+    if (startNode == nullptr || endNode == nullptr) return nullptr;
 
     AStar algorithm;
 

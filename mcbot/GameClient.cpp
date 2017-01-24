@@ -2,8 +2,10 @@
 
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 #include "Utility.h"
+#include "WorldGraph.h"
 
 GameClient::GameClient()
     : m_Dispatcher(),
@@ -11,8 +13,8 @@ GameClient::GameClient()
     m_EntityManager(&m_Dispatcher),
     m_PlayerManager(&m_Dispatcher, &m_EntityManager),
     m_World(&m_Dispatcher),
-    m_PlayerController(&m_Connection, m_World, m_PlayerManager),
     m_Inventories(&m_Dispatcher, &m_Connection),
+    m_Graph(new WorldGraph(this)),
     m_Connected(false)
 {
     m_Connection.RegisterListener(this);
@@ -22,8 +24,13 @@ GameClient::~GameClient() {
     m_Connection.UnregisterListener(this);
 }
 
+std::shared_ptr<WorldGraph> GameClient::GetGraph() {
+    return m_Graph;
+}
+
 void GameClient::OnSocketStateChange(Network::Socket::Status newState) {
     m_Connected = (newState == Network::Socket::Status::Connected);
+    std::cout << "Connected: " << std::boolalpha << m_Connected << std::endl;
 }
 
 bool GameClient::login(std::string host, unsigned short port, std::string name, std::string password) {
@@ -59,7 +66,7 @@ void GameClient::run() {
         lastUpdate += TickDelay * updateCount;
 
         for (s64 i = 0; i < std::min(updateCount, MaximumUpdates); ++i) {
-            m_PlayerController.Update();
+            Update(50.0 / 1000.0);
             NotifyListeners(&ClientListener::OnTick);
         }
     }

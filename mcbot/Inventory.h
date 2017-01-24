@@ -8,6 +8,7 @@
 class Inventory {
 public:
     static const s32 HOTBAR_SLOT_START = 36;
+    static const s32 PLAYER_INVENTORY_ID = 0;
 
 private:
     Minecraft::Connection* m_Connection;
@@ -44,6 +45,7 @@ public:
 
     void HandlePacket(Minecraft::Packets::Inbound::SetSlotPacket* packet);
     void HandlePacket(Minecraft::Packets::Inbound::WindowItemsPacket* packet);
+    void HandlePacket(Minecraft::Packets::Inbound::HeldItemChangePacket* packet);
 
     std::shared_ptr<Inventory> GetInventory(s32 windowId);
 };

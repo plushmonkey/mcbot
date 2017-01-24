@@ -3,56 +3,45 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <queue>
+#include <functional>
+#include "WorldGraph.h"
+#include "Steering.h"
+#include "PhysicsComponent.h"
+#include "Collision.h"
+#include "SynchronizationComponent.h"
 
 #include "GameClient.h"
 #include "Pathing.h"
 #include "Utility.h"
+#include "Decision.h"
 
-struct CastResult {
-    std::vector<Vector3i> hit;
-    std::size_t length;
-    bool full;
-};
-
-CastResult RayCast(Minecraft::World* world, const Vector3d& from, Vector3d direction, std::size_t length) {
-    CastResult result;
-
-    std::vector<Vector3i> hit(length);
-
-    direction.Normalize();
-    result.length = length;
-    result.full = true;
-
-    for (std::size_t i = 0; i < length; ++i) {
-        Vector3i check = ToVector3i(from + (direction * i));
-        Minecraft::BlockPtr block = world->GetBlock(check);
-
-        if (block && !block->IsSolid()) {
-            hit.push_back(check);
-        } else {
-            result.full = false;
-            result.length = i;
-            break;
-        }
-    }
-
-    result.hit = hit;
-
-    return result;
-}
-
-class PlayerList : public Minecraft::PlayerListener {
+class PlayerList : public Minecraft::PlayerListener, public ClientListener {
 private:
-    Minecraft::PlayerManager* m_PlayerManager;
+    GameClient* m_Client;
     std::map<std::wstring, Minecraft::PlayerPtr> m_Players;
+    Minecraft::PlayerPtr m_BotPlayer;
+
+    struct VelocityTracker {
+        util::Smoother<Vector3d, 5> velocity;
+        Vector3d lastPosition;
+    };
+
+    std::map<Minecraft::EntityId, VelocityTracker> m_VelocityTrackers;
 
 public:
-    PlayerList(Minecraft::PlayerManager* pm) : m_PlayerManager(pm) {
-        pm->RegisterListener(this);
+    PlayerList(GameClient* client) : m_Client(client) {
+        m_Client->RegisterListener(this);
+        m_Client->GetPlayerManager()->RegisterListener(this);
     }
 
     ~PlayerList() {
-        m_PlayerManager->UnregisterListener(this);
+        m_Client->UnregisterListener(this);
+        m_Client->GetPlayerManager()->UnregisterListener(this);
+    }
+
+    void OnClientSpawn(Minecraft::PlayerPtr player) {
+        m_BotPlayer = player;
     }
 
     void OnPlayerJoin(Minecraft::PlayerPtr player) {
@@ -63,6 +52,45 @@ public:
         m_Players.erase(player->GetName());
     }
 
+    void UpdatePlayer(Minecraft::PlayerPtr player) {
+        auto entity = player->GetEntity();
+        if (!entity) return;
+
+        auto find = m_VelocityTrackers.find(entity->GetEntityId());
+        if (find == m_VelocityTrackers.end()) {
+            VelocityTracker tracker;
+            tracker.lastPosition = entity->GetPosition();
+
+            m_VelocityTrackers[entity->GetEntityId()] = tracker;
+        } else {
+            Vector3d pos = entity->GetPosition();
+            Vector3d velocity = (pos - find->second.lastPosition);
+
+            find->second.velocity.AddValue(velocity);
+            find->second.lastPosition = pos;
+
+            Vector3d smoothed = find->second.velocity.GetSmoothedValue();
+            Vector3d entityVelocity = smoothed * 8000;
+            entity->SetVelocity(Vector3s((short)entityVelocity.x, (short)entityVelocity.y, (short)entityVelocity.z));
+        }
+    }
+
+    void OnTick() {
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+        if (physics != nullptr && m_BotPlayer)
+            m_BotPlayer->GetEntity()->SetPosition(physics->GetPosition());
+
+        for (auto entry : m_Players) {
+            auto player = entry.second;
+            if (!player) continue;
+
+            UpdatePlayer(player);
+        }
+
+        if (m_BotPlayer)
+            UpdatePlayer(m_BotPlayer);
+    }
+
     Minecraft::PlayerPtr GetPlayerByName(const std::wstring& name) {
         auto iter = m_Players.find(name);
         if (iter != m_Players.end())
@@ -71,265 +99,7 @@ public:
     }
 };
 
-// Todo: rebuild graph when world changes. It will probably need to be async and updated infrequently. (500-800ms rebuild)
-class WorldGraph : public ai::path::Graph, public Minecraft::WorldListener {
-private:
-    GameClient* m_Client;
-    bool m_NeedsBuilt;
-
-    ai::path::Node* GetNode(Vector3i pos) {
-        auto iter = m_Nodes.find(pos);
-
-        ai::path::Node* node = nullptr;
-        if (iter == m_Nodes.end()) {
-            node = new ai::path::Node(pos);
-            m_Nodes[pos] = node;
-        } else {
-            node = iter->second;
-        }
-
-        return node;
-    }
-
-    // The check pos is not solid, the block above is not solid, and the block below is solid
-    bool IsWalkable(Vector3i pos) {
-        Minecraft::World* world = m_Client->GetWorld();
-
-        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
-
-        Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
-        Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0));
-
-        return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
-    }
-
-    int IsSafeFall(Vector3i pos) {
-        Minecraft::World* world = m_Client->GetWorld();
-
-        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
-
-        Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
-
-        if (!checkBlock || checkBlock->IsSolid()) return 0;
-        if (!aBlock || aBlock->IsSolid()) return 0;
-
-        for (int i = 0; i < 4; ++i) {
-            Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i+1, 0));
-
-            if (bBlock && bBlock->IsSolid()) return i + 1;
-            //if (bBlock && bBlock->IsSolid() || (bBlock->GetType() == 8 || bBlock->GetType() == 9)) return i + 1;
-        }
-
-        return 0;
-    }
-
-    bool IsWater(Vector3i pos) {
-        Minecraft::World* world = m_Client->GetWorld();
-        Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
-
-        return checkBlock && (checkBlock->GetType() == 8 || checkBlock->GetType() == 9);
-    }
-
-public:
-    WorldGraph(GameClient* client)
-        : m_Client(client),
-          m_NeedsBuilt(false)
-    {
-        client->GetWorld()->RegisterListener(this);
-    }
-
-    ~WorldGraph() {
-        m_Client->GetWorld()->UnregisterListener(this);
-    }
-
-    void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex) {
-        m_NeedsBuilt = true;
-    }
-
-    void BuildGraph() {
-        if (!m_NeedsBuilt) return;
-        m_NeedsBuilt = false;
-
-        const int SearchRadius = 16 * 4;
-        const int YSearchRadius = 32;
-        Vector3i position = ToVector3i(m_Client->GetPlayerController()->GetPosition());
-
-        static const std::vector<Vector3i> directions = {
-            Vector3i(-1, 0, 0), Vector3i(1, 0, 0), Vector3i(0, -1, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1), Vector3i(0, 0, 1), // Directly nearby in flat area
-            Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1), // Up one step
-            Vector3i(-1, -1, 0), Vector3i(1, -1, 0), Vector3i(0, -1, -1), Vector3i(0, -1, 1) // Down one step
-        };
-        static const std::vector<Vector3i> waterDirections = {
-            Vector3i(-1, 0, 0), Vector3i(1, 0, 0), Vector3i(0, -1, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1), Vector3i(0, 0, 1), // Directly nearby in flat area
-            Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1),
-        };
-        
-        this->Destroy();
-
-        m_Edges.reserve(70000);
-
-        std::cout << "Building graph\n";
-
-        s64 startTime = util::GetTime();
-
-        Minecraft::World* world = m_Client->GetWorld();
-        for (int x = -SearchRadius; x < SearchRadius; ++x) {
-            for (int y = -YSearchRadius; y < YSearchRadius; ++y) {
-                int checkY = (int)position.y + y;
-                if (checkY <= 0 || checkY >= 256) continue;
-                for (int z = -SearchRadius; z < SearchRadius; ++z) {
-                    Vector3i checkPos = position + Vector3i(x, y, z);
-
-                    Minecraft::BlockPtr checkBlock = world->GetBlock(checkPos);
-
-                    // Skip because it's not loaded yet or it's solid
-                    if (!checkBlock || checkBlock->IsSolid()) continue;
-
-                    if (IsWalkable(checkPos)) {
-                        for (Vector3i direction : directions) {
-                            Vector3i neighborPos = checkPos + direction;
-
-                            if (IsWalkable(neighborPos) || (IsSafeFall(neighborPos) && direction.y == 0)) {
-                                ai::path::Node* current = GetNode(checkPos);
-                                ai::path::Node* neighborNode = GetNode(neighborPos);
-
-                                LinkNodes(current, neighborNode);
-                            }
-                        }
-                    } else if (IsWater(checkPos)) {
-                        for (Vector3i direction : waterDirections) {
-                            Vector3i neighborPos = checkPos + direction;
-
-                            if (IsWalkable(neighborPos) || IsWater(neighborPos)) {
-                                ai::path::Node* current = GetNode(checkPos);
-                                ai::path::Node* neighborNode = GetNode(neighborPos);
-
-                                LinkNodes(current, neighborNode, 4.0);
-                                LinkNodes(neighborNode, current, 4.0);
-                            }
-                        }
-                    } else {
-                        int fallDist = IsSafeFall(checkPos);
-                        if (fallDist <= 0) continue;
-
-                        ai::path::Node* current = GetNode(checkPos);
-
-                        for (int i = 0; i < fallDist; ++i) {
-                            Vector3i fallPos = checkPos - Vector3i(0, i + 1, 0);
-
-                            Minecraft::BlockPtr block = world->GetBlock(fallPos);
-                            if (!block || block->IsSolid()) break;
-
-                            ai::path::Node* neighborNode = GetNode(fallPos);
-
-                            LinkNodes(current, neighborNode);
-                            current = neighborNode;
-                        }
-                    }
-                }
-            }
-        }
-
-        std::cout << "Graph built in " << (util::GetTime() - startTime) << "ms.\n";
-        std::cout << "Nodes: " << m_Nodes.size() << std::endl;
-        std::cout << "Edges: " << m_Edges.size() << std::endl;
-    }
-};
-
-class AttackUpdate : public ClientListener {
-protected:
-    GameClient* m_Client;
-    Minecraft::PlayerPtr m_Target;
-    s64 m_AttackDelay;
-    s64 m_LastAttack;
-    
-
-public:
-    AttackUpdate(GameClient* client, Minecraft::PlayerPtr target, s64 attackDelay) 
-        : m_Client(client),
-          m_Target(target),
-          m_AttackDelay(attackDelay),
-          m_LastAttack(0)
-    {
-        m_Client->RegisterListener(this);
-    }
-
-    virtual ~AttackUpdate() {
-        m_Client->UnregisterListener(this);
-    }
-
-    void OnTick() {
-        s64 time = util::GetTime();
-
-        if (time < m_LastAttack + m_AttackDelay) return;
-        if (!m_Target || !m_Target->GetEntity()) return;
-
-        Attack();
-
-        m_LastAttack = time;
-    }
-
-    virtual void Attack() = 0;
-
-    bool SelectItem(s32 id) {
-        std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
-
-        Minecraft::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
-
-        if (!slot || slot->GetItemId() != id) {
-            s32 itemIndex = inventory->FindItemById(id);
-
-            std::cout << "Selecting item id " << id << std::endl;
-            if (itemIndex == -1) {
-                std::cout << "Not carrying item with id of " << id << std::endl;
-                return false;
-            }
-
-            // todo: Swap the bow into a hotbar slot if it isn't there
-
-            s32 hotbarIndex = itemIndex - Inventory::HOTBAR_SLOT_START;
-            m_Client->GetInventory()->SelectHotbarSlot(hotbarIndex);
-        }
-
-        return true;
-    }
-};
-
-class MeleeAttackUpdate : public AttackUpdate {
-private:
-    const double AttackRangeSq = 4 * 4;
-
-    enum { AttackDelay = 1000 };
-
-public:
-    MeleeAttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
-        : AttackUpdate(client, target, AttackDelay)
-    {
-        
-    }
-
-    void Attack() {
-        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
-        Vector3d targetPos = m_Target->GetEntity()->GetPosition();
-
-        if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
-
-        using namespace Minecraft::Packets::Outbound;
-
-        const s32 StoneSwordId = 272;
-
-        SelectItem(StoneSwordId);
-
-        // Send arm swing
-        AnimationPacket animationPacket;
-        m_Client->GetConnection()->SendPacket(&animationPacket);
-
-        // Send attack
-        UseEntityPacket useEntityPacket(m_Target->GetEntity()->GetEntityId(), UseEntityPacket::Action::Attack);
-        m_Client->GetConnection()->SendPacket(&useEntityPacket);
-    }
-};
-
+/*
 class BowAttackUpdate : public AttackUpdate {
 private:
     enum { AttackDelay = 1 };
@@ -359,7 +129,7 @@ public:
 
         using namespace Minecraft::Packets::Outbound;
 
-        if ((targetPos - botPos).LengthSq() < 5*5) return;
+        if ((targetPos - botPos).LengthSq() < 4*4) return;
 
         Vector3d bowPos = botPos + Vector3d(0, 1, 0);
         Vector3d toTarget = (targetPos + Vector3d(0, 1, 0)) - bowPos;
@@ -404,137 +174,286 @@ public:
             m_Client->GetConnection()->SendPacket(&shootPacket);
         }
     }
+};*/
+
+class PathfindAction : public DecisionAction {
+private:
+    GameClient* m_Client;
+    ai::path::Plan* m_Plan;
+    PlayerList* m_PlayerList;
+
+public:
+    PathfindAction(GameClient* client, PlayerList* playerList)
+        : m_Client(client), m_PlayerList(playerList), m_Plan(nullptr)
+    {
+        
+    }
+
+    void Act() override {
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+        if (!physics) return;
+
+        Minecraft::PlayerPtr targetPlayer = m_PlayerList->GetPlayerByName(L"plushmonkey");
+        if (targetPlayer == nullptr) {
+            physics->SetVelocity(Vector3d(0, 0, 0));
+            return;
+        }
+
+        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+        if (!entity) {
+            physics->SetVelocity(Vector3d(0, 0, 0));
+            return;
+        }
+
+        if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != ToVector3i(targetPlayer->GetEntity()->GetPosition())) {
+            s64 startTime = util::GetTime();
+
+            m_Plan = m_Client->GetGraph()->FindPath(ToVector3i(physics->GetPosition()), ToVector3i(entity->GetPosition()));
+
+            //std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
+        }
+
+        Vector3d position = physics->GetPosition();
+
+        Vector3d target = entity->GetPosition();
+        Vector3d velocity = ToVector3d(entity->GetVelocity()) * (20.0 / 8000.0);
+
+        static CollisionDetector collisionDetector(m_Client->GetWorld());
+
+        ai::PathFollowSteering steer(m_Client, m_Plan, 0.25);
+        
+        ai::SteeringAcceleration steering = steer.GetSteering();
+        physics->ApplyAcceleration(steering.movement);
+        physics->ApplyRotation(steering.rotation);
+
+        if (m_Plan && m_Plan->GetCurrent())
+            target = (target + ToVector3d(m_Plan->GetCurrent()->GetPosition())) / 2.0;
+        ai::FaceSteering align(m_Client, target, 0.1, 1, 1);
+        physics->ApplyRotation(align.GetSteering().rotation);
+    }
+};
+
+class WanderAction : public DecisionAction {
+private:
+    GameClient* m_Client;
+    ai::WanderSteering m_Wander;
+
+public:
+    WanderAction(GameClient* client)
+        : m_Client(client),
+        m_Wander(client, 15.0, 2.0, 0.15)
+    {
+
+    }
+    void Act() override {
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+        if (!physics) return;
+
+        ai::SteeringAcceleration steering = m_Wander.GetSteering();
+
+        physics->ApplyAcceleration(steering.movement);
+        physics->ApplyRotation(steering.rotation);
+
+        Vector3d pos = physics->GetPosition();
+        Vector3d vel = physics->GetVelocity();
+
+        Vector3d projectedPos = pos + (vel * 50.0 / 1000.0);
+        
+        Minecraft::BlockPtr projectedBlock = m_Client->GetWorld()->GetBlock(projectedPos);
+        Minecraft::BlockPtr block = m_Client->GetWorld()->GetBlock(projectedPos - Vector3d(0, 1, 0));
+        
+        if (!projectedBlock || projectedBlock->IsSolid() || !block || !block->IsSolid()) {
+            physics->SetVelocity(-vel * 1.5);
+            physics->ApplyRotation(3.14159f);
+        }
+    }
+};
+
+class AttackAction : public DecisionAction {
+protected:
+    GameClient* m_Client;
+    s64 m_AttackCooldown;
+    s64 m_LastAttack;
+
+    bool SelectItem(s32 id) {
+        std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
+
+        Minecraft::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+
+        if (!slot || slot->GetItemId() != id) {
+            s32 itemIndex = inventory->FindItemById(id);
+
+            std::cout << "Selecting item id " << id << std::endl;
+            if (itemIndex == -1) {
+                std::cout << "Not carrying item with id of " << id << std::endl;
+                return false;
+            } else {
+                std::cout << "Item is in index " << itemIndex << std::endl;
+            }
+
+            s32 hotbarIndex = itemIndex - Inventory::HOTBAR_SLOT_START;
+            m_Client->GetInventory()->SelectHotbarSlot(hotbarIndex);
+        }
+
+        return true;
+    }
+
+public:
+    AttackAction(GameClient* client, s64 attackCooldown) : m_Client(client), m_LastAttack(0), m_AttackCooldown(attackCooldown) { }
+
+    void Act() override {
+        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        auto entity = targetPlayer->GetEntity();
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+
+        ai::FaceSteering align(m_Client, entity->GetPosition(), 0.1, 1, 1);
+
+        physics->ApplyRotation(align.GetSteering().rotation);
+        physics->SetVelocity(Vector3d(0, 0, 0));
+
+        s64 time = util::GetTime();
+
+        if (time >= m_LastAttack + m_AttackCooldown) {
+            Attack(entity);
+
+            m_LastAttack = time;
+        }
+    }
+
+    virtual void Attack(Minecraft::EntityPtr entity) = 0;
+};
+
+class MeleeAction : public AttackAction {
+private:
+    const double AttackRangeSq = 3 * 3;
+
+    enum { AttackDelay = 2000 };
+
+public:
+    MeleeAction(GameClient* client)
+        : AttackAction(client, AttackDelay)
+    {
+
+    }
+
+    void Attack(Minecraft::EntityPtr entity) {
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+
+        Vector3d botPos = physics->GetPosition();
+        Vector3d targetPos = entity->GetPosition();
+
+        if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
+
+        using namespace Minecraft::Packets::Outbound;
+
+        const s32 StoneSwordId = 272;
+
+        SelectItem(StoneSwordId);
+
+        // Send arm swing
+        AnimationPacket animationPacket(Minecraft::Hand::Main);
+        m_Client->GetConnection()->SendPacket(&animationPacket);
+
+        // Send attack
+        UseEntityPacket useEntityPacket(entity->GetEntityId(), UseEntityPacket::Action::Attack);
+        m_Client->GetConnection()->SendPacket(&useEntityPacket);
+    }
 };
 
 class BotUpdate : public ClientListener {
 private:
     GameClient* m_Client;
     PlayerList m_Players;
-    WorldGraph m_Graph;
     s64 m_StartupTime;
     bool m_Built;
-    ai::path::Plan* m_Plan;
-    std::shared_ptr<AttackUpdate> m_MeleeUpdate;
-    std::shared_ptr<AttackUpdate> m_BowUpdate;
-    
-    // Player is 0.3 wide, so it should only need to be within 0.2 of center of block to ensure no wall sticking. 0.15 is safer though.
-    const double CenterToleranceSq = 0.15 * 0.15;
+
+    std::shared_ptr<PathfindAction> m_PathfindAction;
+
+    DecisionTreeNodePtr m_DecisionTree;
 
 public:
     BotUpdate(GameClient* client)
         : m_Client(client),
-          m_Players(client->GetPlayerManager()),
-          m_Graph(client)
+          m_Players(client)
     {
         client->RegisterListener(this);
 
+        auto physics = std::make_shared<PhysicsComponent>();
+        double WalkSpeed = 4.3;
+
+        physics->SetOwner(client);
+        physics->SetMaxAcceleration(WalkSpeed*40);
+        physics->SetMaxSpeed(WalkSpeed);
+        physics->SetMaxRotation(3.14159 * 8);
+        client->AddComponent(physics);
+
+        auto sync = std::make_shared<SynchronizationComponent>(m_Client->GetConnection(), m_Client->GetPlayerManager());
+        sync->SetOwner(m_Client);
+        m_Client->AddComponent(sync);
+
         m_StartupTime = util::GetTime();
         m_Built = false;
-        m_Plan = nullptr;
+
+        Minecraft::BlockPtr block = Minecraft::BlockRegistry::GetInstance()->GetBlock(1, 0);
+
+        m_PathfindAction = std::make_shared<PathfindAction>(m_Client, &m_Players);
+
+        std::shared_ptr<DecisionTreeNode> pathfindDecision = std::make_shared<RangeDecision<bool>>(
+            m_PathfindAction, std::make_shared<WanderAction>(m_Client), std::bind(&BotUpdate::HasValidTarget, this), true, true
+        );
+
+        m_DecisionTree = std::make_shared<RangeDecision<double>>(
+            std::make_shared<MeleeAction>(m_Client), pathfindDecision, std::bind(&BotUpdate::DistanceToTarget, this), 0.0, 2.0
+        );
     }
 
     ~BotUpdate() {
+        m_Client->RemoveComponent(Component::GetIdFromName(SynchronizationComponent::name));
         m_Client->UnregisterListener(this);
     }
 
-    void OnTick() {
-        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
-        Vector3d target;
-
-        m_Client->GetPlayerController()->SetTargetPosition(Vector3d(0, 0, 0));
-        m_Client->GetPlayerController()->SetHandleFall(false);
-
+    bool HasValidTarget() {
         Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
+        if (!targetPlayer) return false;
 
-        if (targetPlayer == nullptr) {
-            m_MeleeUpdate.reset();
-            m_BowUpdate.reset();
-        } else {
+        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+        return entity != nullptr;
+    }
+
+    double DistanceToTarget() {
+        Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
+        if (targetPlayer) {
             Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+            if (entity) {
+                auto physics = GetActorComponent(m_Client, PhysicsComponent);
+                if (physics)
+                    return entity->GetPosition().Distance(physics->GetPosition());
+            }
+        }
+        return std::numeric_limits<double>::max();
+    }
 
-            if (entity != nullptr) {
+    void OnTick() {
+        auto sync = GetActorComponent(m_Client, SynchronizationComponent);
+        if (!sync || !sync->HasSpawned()) return;
 
-                if (!m_BowUpdate) {
-                    m_BowUpdate = std::make_shared<BowAttackUpdate>(m_Client, targetPlayer);
-                }
-
-                if (!m_MeleeUpdate) {
-                    m_MeleeUpdate = std::make_shared<MeleeAttackUpdate>(m_Client, targetPlayer);
-                }
-
-                target = entity->GetPosition();
-
-                if (util::GetTime() > m_StartupTime + 5000) {
-                    if (!m_Built) {
-                        m_Graph.BuildGraph();
-                        m_Built = true;
-                    }
-                    
-                    if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != ToVector3i(targetPlayer->GetEntity()->GetPosition())) {
-                        s64 startTime = util::GetTime();
-
-                        m_Plan = m_Graph.FindPath(ToVector3i(botPos), ToVector3i(target));
-
-                        std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
-                    }
-
-                    if (m_Plan) {
-                        while (true) {
-                            ai::path::Node* current = m_Plan->GetCurrent();
-
-                            if (!current) break;
-
-                            Vector3d planPos = ToVector3d(current->GetPosition()) + Vector3d(0.5, 0, 0.5);
-
-                            Vector3d toPlan = planPos - botPos;
-                            Minecraft::BlockPtr belowPlanBlock = m_Client->GetWorld()->GetBlock(planPos - Vector3d(0, 1, 0));
-
-                            if (toPlan.LengthSq() <= CenterToleranceSq) {
-                                if (m_Plan->HasNext()) {
-                                    current = m_Plan->Next();
-                                    continue;
-                                } else {
-                                    break;
-                                }
-                            }
-                            
-                            std::cout << planPos << std::endl;
-                            Vector3d planDirection = Vector3Normalize(toPlan);
-                            const double WalkSpeed = 4.3;
-                            double moveSpeed = WalkSpeed;
-
-                            if (belowPlanBlock && !belowPlanBlock->IsSolid())
-                                moveSpeed *= 2;
-                            Minecraft::BlockPtr currentBlock = m_Client->GetWorld()->GetBlock(botPos);
-                            if (currentBlock && (currentBlock->GetType() == 8 || currentBlock->GetType() == 9))
-                                moveSpeed = WalkSpeed / 2;
-
-                            Vector3d delta = planDirection * moveSpeed * (50.0 / 1000.0);
-                            double toPlanDist = toPlan.Length();
-
-                            if (delta.Length() > toPlanDist)
-                                delta = Vector3Normalize(delta) * toPlanDist;
-
-                            m_Client->GetPlayerController()->Move(delta);
-                            //target = planPos;
-                            break;
-                        }
-                    } else {
-                        std::cout << "No plan\n";
-                    }
-                }
+        if (util::GetTime() > m_StartupTime + 5000) {
+            if (!m_Built) {
+                m_Client->GetGraph()->BuildGraph();
+                m_Built = true;
             }
         }
 
-        m_Client->GetPlayerController()->LookAt(target);
+        DecisionAction* action = m_DecisionTree->Decide();
+        if (action)
+            action->Act();
     }
 };
-
 
 int main(void) {
     Minecraft::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
     GameClient game;
-    BotUpdate update(&game);
+    BotUpdate update(&game);  
 
     game.login("127.0.0.1", 25565, "bot", "pw");
     game.run();

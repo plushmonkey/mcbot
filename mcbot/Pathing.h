@@ -4,6 +4,7 @@
 #include <functional>
 #include <deque>
 #include <map>
+#include <unordered_map>
 #include <list>
 
 #include <mclib/Common.h>
@@ -18,17 +19,17 @@ private:
     Vector3i m_Position;
     std::vector<Edge*> m_Edges;
 
-    Edge* FindNodeEdge(Node* other);
+    Edge* FindNodeEdge(Node* other) const;
 
 public:
     Node(Vector3i position);
 
-    Vector3i GetPosition() { return m_Position; }
+    Vector3i GetPosition() const { return m_Position; }
     
     void AddEdge(Edge* edge);
     // Follow all of the edges to grab any immediately connected nodes
-    std::vector<Node*> GetNeighbors();
-    float GetCostFrom(Node* node);
+    std::vector<Node*> GetNeighbors() const;
+    float GetCostFrom(Node* node) const;
 };
 
 class Edge {
@@ -41,10 +42,10 @@ public:
         m_Weight = weight;
     }
 
-    float GetWeight() { return m_Weight; }
+    float GetWeight() const { return m_Weight; }
 
-    Node* GetNode(std::size_t index) { return m_Nodes[index]; }
-    Node* GetConnected(Node* from);
+    Node* GetNode(std::size_t index) const { return m_Nodes[index]; }
+    Node* GetConnected(const Node* from) const;
     void LinkNodes(Node* first, Node* second);
 };
 
@@ -59,9 +60,12 @@ public:
         m_Iterator = m_Path.end();
     }
 
-    bool HasNext() {
+    bool HasNext() const {
         return m_Iterator != m_Path.end();
     }
+
+    std::size_t GetSize() { return m_Path.size(); }
+    std::vector<Node*>::reference operator[](std::size_t index) { return m_Path[index]; }
 
     void Reset() {
         m_Iterator = m_Path.begin();
@@ -72,7 +76,7 @@ public:
         return *m_Iterator;
     }
 
-    Node* GetGoal() {
+    Node* GetGoal() const {
         if (m_Path.empty()) return nullptr;
         return m_Path.back();
     }
@@ -101,13 +105,13 @@ private:
 public:
     PlanningNode(PlanningNode* prev, Node* node, Node* goal);
 
-    PlanningNode* GetPrevious() { return m_Prev; }
-    Node* GetNode() { return m_Node; }
-    Node* GetGoal() { return m_Goal; }
-    float GetGoalCost() { return m_GoalCost; }
-    float GetHeuristicCost() { return m_HeuristicCost; }
-    float GetFitnessCost() { return m_FitnessCost; }
-    bool IsClosed() { return m_Closed; }
+    PlanningNode* GetPrevious() const { return m_Prev; }
+    Node* GetNode() const { return m_Node; }
+    Node* GetGoal() const { return m_Goal; }
+    float GetGoalCost() const { return m_GoalCost; }
+    float GetHeuristicCost() const { return m_HeuristicCost; }
+    float GetFitnessCost() const { return m_FitnessCost; }
+    bool IsClosed() const { return m_Closed; }
     void SetClosed(bool closed) { m_Closed = closed; }
 
     void SetPrevious(PlanningNode* previous) { 
@@ -123,7 +127,7 @@ public:
         m_FitnessCost = m_GoalCost + m_HeuristicCost;
     }
 
-    bool IsBetterThan(PlanningNode* other) {
+    bool IsBetterThan(const PlanningNode* other) const {
         return m_FitnessCost < other->GetFitnessCost();
     }
 };
@@ -162,7 +166,7 @@ struct PlanningNodeComparator {
 
 class AStar {
 private:
-    std::map<Node*, PlanningNode*> m_NodeMap;
+    std::unordered_map<Node*, PlanningNode*> m_NodeMap;
     PriorityQueue<PlanningNode*, PlanningNodeComparator> m_OpenSet;
     Node* m_Goal;
 
@@ -185,8 +189,8 @@ protected:
 public:
     ~Graph();
 
-    Node* FindClosest(const Vector3i& pos);
-    Plan* FindPath(const Vector3i& start, const Vector3i& end);
+    Node* FindClosest(const Vector3i& pos) const;
+    Plan* FindPath(const Vector3i& start, const Vector3i& end) const;
 
     void Destroy();
 };
