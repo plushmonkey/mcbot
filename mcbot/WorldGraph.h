@@ -2,23 +2,27 @@
 #define MCBOT_WORLD_GRAPH_H_
 
 #include <mclib/World.h>
+
 #include "Pathing.h"
 
 class GameClient;
 
-// Todo: rebuild graph when world changes. It will probably need to be async and updated infrequently. (500-800ms rebuild)
+class PhysicsComponent;
+
 class WorldGraph : public ai::path::Graph, public Minecraft::WorldListener {
 private:
+    struct ChunkTaskComparator {
+        static std::shared_ptr<PhysicsComponent> physics;
+
+        bool operator()(Vector3i first, Vector3i second);
+    };
+
     GameClient* m_Client;
-    bool m_NeedsBuilt;
+    ai::path::PriorityQueue<Vector3i, ChunkTaskComparator> m_BuildQueue;
 
     ai::path::Node* GetNode(Vector3i pos);
-
-    // The check pos is not solid, the block above is not solid, and the block below is solid
     bool IsWalkable(Vector3i pos) const;
-
     int IsSafeFall(Vector3i pos) const;
-
     bool IsWater(Vector3i pos) const;
     
     struct Link {
@@ -29,8 +33,8 @@ private:
         Link(Vector3i f, Vector3i s, float w) : first(f), second(s), weight(w) { }
     };
 
-    std::vector<Link> ProcessBlock(Vector3i checkPos, Minecraft::World* world, ai::path::Node* target = nullptr);
-    std::vector<Link> ProcessChunk(Minecraft::ChunkColumnPtr chunk, Minecraft::World* world);
+    std::vector<Link> ProcessBlock(Vector3i checkPos);
+    std::vector<Link> ProcessChunk(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, s32 yIndex);
 public:
     WorldGraph(GameClient* client);
 
@@ -38,9 +42,9 @@ public:
 
     void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex);
     void OnBlockChange(Vector3i position, Minecraft::BlockPtr newBlock, Minecraft::BlockPtr oldBlock);
+    void OnChunkUnload(Minecraft::ChunkColumnPtr chunk);
 
-    void BuildGraph();
-    void BuildGraph2();
+    void ProcessQueue();
 };
 
 

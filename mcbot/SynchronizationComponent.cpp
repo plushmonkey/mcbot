@@ -33,6 +33,7 @@ void SynchronizationComponent::Update(double dt) {
 
     float pitch = 0.0f;
 
+    // todo: Track position and orientation. Only send the larger packets when needed.
     Minecraft::Packets::Outbound::PlayerPositionAndLookPacket response(pos,
         (float)physics->GetOrientation() * 180.0f / 3.14159f, pitch, true);
 

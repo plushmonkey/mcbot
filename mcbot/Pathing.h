@@ -159,6 +159,7 @@ public:
     }
 
     bool Empty() const { return m_Container.empty(); }
+    Container& GetData() { return m_Container; }
 };
 
 struct PlanningNodeComparator {

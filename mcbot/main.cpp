@@ -11,6 +11,7 @@
 #include "Collision.h"
 #include "SynchronizationComponent.h"
 #include "SpeedComponent.h"
+#include "GraphComponent.h"
 
 #include "GameClient.h"
 #include "Pathing.h"
@@ -190,6 +191,19 @@ public:
         
     }
 
+    Vector3i GetGroundLevel(Vector3i pos) {
+        Minecraft::World* world = m_Client->GetWorld();
+
+        s32 y;
+        for (y = (s32)pos.y; y >= 0; --y) {
+            Minecraft::BlockPtr block = world->GetBlock(Vector3i(pos.x, y, pos.z));
+
+            if (block && block->IsSolid()) break;
+        }
+
+        return Vector3i(pos.x, y + 1, pos.z);
+    }
+
     void Act() override {
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
         if (!physics) return;
@@ -206,12 +220,17 @@ public:
             return;
         }
 
-        if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != ToVector3i(targetPlayer->GetEntity()->GetPosition())) {
+        Vector3i entityGroundPos = GetGroundLevel(ToVector3i(entity->GetPosition()));
+
+        if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != entityGroundPos) {
             s64 startTime = util::GetTime();
 
-            m_Plan = m_Client->GetGraph()->FindPath(ToVector3i(physics->GetPosition()), ToVector3i(entity->GetPosition()));
+            auto graphComponent = GetActorComponent(m_Client, GraphComponent);
+            if (!graphComponent) return;
 
-            //std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
+            m_Plan = graphComponent->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), entityGroundPos);
+
+            std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
         }
 
         if (!m_Plan) {
@@ -385,8 +404,11 @@ public:
     {
         client->RegisterListener(this);
 
-        auto physics = std::make_shared<PhysicsComponent>();
+        auto graphComponent = std::make_shared<GraphComponent>(m_Client);
+        graphComponent->SetOwner(m_Client);
+        m_Client->AddComponent(graphComponent);
 
+        auto physics = std::make_shared<PhysicsComponent>();
         physics->SetOwner(client);
         physics->SetMaxAcceleration(100.0f);
         physics->SetMaxRotation(3.14159 * 8);
@@ -447,11 +469,10 @@ public:
         auto sync = GetActorComponent(m_Client, SynchronizationComponent);
         if (!sync || !sync->HasSpawned()) return;
 
-        if (util::GetTime() > m_StartupTime + 5000) {
-            if (!m_Built) {
-                m_Client->GetGraph()->BuildGraph();
-                m_Built = true;
-            }
+        auto speed = GetActorComponent(m_Client, SpeedComponent);
+        if (speed) {
+            if (speed->GetMovementType() != SpeedComponent::Movement::Sprinting)
+                speed->SetMovementType(SpeedComponent::Movement::Sprinting);
         }
 
         DecisionAction* action = m_DecisionTree->Decide();

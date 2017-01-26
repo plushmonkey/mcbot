@@ -82,8 +82,16 @@ Plan* AStar::operator()(Node* start, Node* goal) {
 
     AddToOpenSet(start, nullptr);
 
+    s64 startTime = util::GetTime();
+    static const s64 Timeout = 200;
+
     while (!m_OpenSet.Empty()) {
         PlanningNode* node = m_OpenSet.Pop();
+
+        // Give up after a few seconds
+        if (util::GetTime() > startTime + Timeout) {
+            break;
+        }
 
         if (node->GetNode() == goal)
             return BuildPath(node);
