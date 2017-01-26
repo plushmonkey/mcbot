@@ -122,6 +122,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathing.cpp" />
     <ClCompile Include="PhysicsComponent.cpp" />
+    <ClCompile Include="SpeedComponent.cpp" />
     <ClCompile Include="Steering.cpp" />
     <ClCompile Include="SynchronizationComponent.cpp" />
     <ClCompile Include="Utility.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="Pathing.h" />
     <ClInclude Include="PhysicsComponent.h" />
+    <ClInclude Include="SpeedComponent.h" />
     <ClInclude Include="Steering.h" />
     <ClInclude Include="SynchronizationComponent.h" />
     <ClInclude Include="Utility.h" />

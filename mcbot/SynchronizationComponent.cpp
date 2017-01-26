@@ -14,6 +14,17 @@ void SynchronizationComponent::OnClientSpawn(Minecraft::PlayerPtr player) {
     m_Spawned = true;
 }
 
+void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet) {
+    float health = packet->GetHealth();
+
+    if (health <= 0) {
+        auto action = Minecraft::Packets::Outbound::ClientStatusPacket::Action::PerformRespawn;
+        Minecraft::Packets::Outbound::ClientStatusPacket status(action);
+
+        m_Connection->SendPacket(&status);
+    }
+}
+
 void SynchronizationComponent::Update(double dt) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (physics == nullptr || !m_Spawned) return;

@@ -4,10 +4,11 @@
 #include "Component.h"
 
 #include <mclib/Connection.h>
+#include <mclib/Packets/PacketDispatcher.h>
 #include <mclib/PlayerManager.h>
 
 // Keeps the server and client synchronized
-class SynchronizationComponent : public Component, public Minecraft::PlayerListener {
+class SynchronizationComponent : public Component, public Minecraft::PlayerListener, public Minecraft::Packets::PacketHandler {
 public:
     static const char* name;
 
@@ -17,20 +18,26 @@ private:
     bool m_Spawned;
 
 public:
-    SynchronizationComponent(Minecraft::Connection* connection, Minecraft::PlayerManager* playerManager) 
-        : m_Connection(connection),
+    SynchronizationComponent(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection, Minecraft::PlayerManager* playerManager) 
+        : Minecraft::Packets::PacketHandler(dispatcher), 
+          m_Connection(connection),
           m_PlayerManager(playerManager), 
           m_Spawned(false)
     {
         m_PlayerManager->RegisterListener(this);
+
+        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::UpdateHealth, this);
     }
 
     ~SynchronizationComponent() {
         m_PlayerManager->UnregisterListener(this);
+        GetDispatcher()->UnregisterHandler(this);
     }
 
     bool HasSpawned() const { return m_Spawned; }
     void OnClientSpawn(Minecraft::PlayerPtr player);
+
+    void HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet);
 
     void Update(double dt);
 

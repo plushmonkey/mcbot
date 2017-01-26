@@ -10,6 +10,7 @@
 #include "PhysicsComponent.h"
 #include "Collision.h"
 #include "SynchronizationComponent.h"
+#include "SpeedComponent.h"
 
 #include "GameClient.h"
 #include "Pathing.h"
@@ -213,6 +214,10 @@ public:
             //std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
         }
 
+        if (!m_Plan) {
+            std::cout << "No plan to " << entity->GetPosition() << std::endl;
+        }
+
         Vector3d position = physics->GetPosition();
 
         Vector3d target = entity->GetPosition();
@@ -228,6 +233,8 @@ public:
 
         if (m_Plan && m_Plan->GetCurrent())
             target = (target + ToVector3d(m_Plan->GetCurrent()->GetPosition())) / 2.0;
+        else
+            physics->SetVelocity(Vector3d(0, 0, 0));
         ai::FaceSteering align(m_Client, target, 0.1, 1, 1);
         physics->ApplyRotation(align.GetSteering().rotation);
     }
@@ -379,17 +386,20 @@ public:
         client->RegisterListener(this);
 
         auto physics = std::make_shared<PhysicsComponent>();
-        double WalkSpeed = 4.3;
 
         physics->SetOwner(client);
-        physics->SetMaxAcceleration(WalkSpeed*40);
-        physics->SetMaxSpeed(WalkSpeed);
+        physics->SetMaxAcceleration(100.0f);
         physics->SetMaxRotation(3.14159 * 8);
         client->AddComponent(physics);
 
-        auto sync = std::make_shared<SynchronizationComponent>(m_Client->GetConnection(), m_Client->GetPlayerManager());
+        auto sync = std::make_shared<SynchronizationComponent>(m_Client->GetDispatcher(), m_Client->GetConnection(), m_Client->GetPlayerManager());
         sync->SetOwner(m_Client);
         m_Client->AddComponent(sync);
+
+        auto speed = std::make_shared<SpeedComponent>(m_Client->GetConnection(), m_Client->GetWorld());
+        speed->SetOwner(m_Client);
+        speed->SetMovementType(SpeedComponent::Movement::Normal);
+        m_Client->AddComponent(speed);
 
         m_StartupTime = util::GetTime();
         m_Built = false;

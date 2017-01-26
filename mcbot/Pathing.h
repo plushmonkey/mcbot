@@ -27,6 +27,9 @@ public:
     Vector3i GetPosition() const { return m_Position; }
     
     void AddEdge(Edge* edge);
+    void RemoveEdge(Edge* edge);
+    const std::vector<Edge*>& GetEdges() const { return m_Edges; }
+
     // Follow all of the edges to grab any immediately connected nodes
     std::vector<Node*> GetNeighbors() const;
     float GetCostFrom(Node* node) const;
@@ -185,7 +188,7 @@ protected:
     std::map<Vector3i, Node*> m_Nodes;
     std::vector<Edge*> m_Edges;
 
-    void LinkNodes(Node* first, Node* second, float weight = 1.0);
+    bool LinkNodes(Node* first, Node* second, float weight = 1.0);
 public:
     ~Graph();
 

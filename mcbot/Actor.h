@@ -12,6 +12,8 @@ private:
     ActorComponents m_Components;
 
 public:
+    virtual ~Actor() { }
+
     void Update(double dt);
 
     template <class ComponentType>

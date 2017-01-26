@@ -221,9 +221,10 @@ SteeringAcceleration PathFollowSteering::GetSteering() {
     Vector3i tar = current->GetPosition();
 
     if (std::abs(pos.y - tar.y) > 0.5) {
-        Vector3d newPos = physics->GetPosition();
-        newPos.y = (double)tar.y;
+        //Vector3d newPos = physics->GetPosition();
+        //newPos.y = (double)tar.y;
 
+        Vector3d newPos = m_Target;
         physics->SetPosition(newPos);
     }
 

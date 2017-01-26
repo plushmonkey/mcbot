@@ -29,6 +29,18 @@ void Node::AddEdge(Edge* edge) {
     m_Edges.push_back(edge);
 }
 
+void Node::RemoveEdge(Edge* edge) {
+    ai::path::Node* other = edge->GetConnected(this);
+    
+    auto iter = std::find(m_Edges.begin(), m_Edges.end(), edge);
+    if (iter != m_Edges.end())
+        m_Edges.erase(iter);
+
+    iter = std::find(other->m_Edges.begin(), other->m_Edges.end(), edge);
+    if (iter != other->m_Edges.end())
+        other->m_Edges.erase(iter);
+}
+
 Edge* Node::FindNodeEdge(Node* other) const {
     for (Edge* edge : m_Edges) {
         if (edge->GetConnected(this) == other)
@@ -200,9 +212,9 @@ Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) const {
     return plan;
 }
 
-void Graph::LinkNodes(Node* first, Node* second, float weight) {
+bool Graph::LinkNodes(Node* first, Node* second, float weight) {
     std::vector<Node*> neighbors = first->GetNeighbors();
-    if (std::find(neighbors.begin(), neighbors.end(), second) != neighbors.end()) return;
+    if (std::find(neighbors.begin(), neighbors.end(), second) != neighbors.end()) return false;
 
     Edge* edge = new Edge(weight);
 
@@ -212,6 +224,7 @@ void Graph::LinkNodes(Node* first, Node* second, float weight) {
     second->AddEdge(edge);
 
     m_Edges.push_back(edge);
+    return true;
 }
 
 } // ns path
