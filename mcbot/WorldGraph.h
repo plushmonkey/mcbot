@@ -21,7 +21,6 @@ private:
     ai::path::PriorityQueue<Vector3i, ChunkTaskComparator> m_BuildQueue;
 
     ai::path::Node* GetNode(Vector3i pos);
-    bool IsWalkable(Vector3i pos) const;
     int IsSafeFall(Vector3i pos) const;
     bool IsWater(Vector3i pos) const;
     
@@ -39,6 +38,8 @@ public:
     WorldGraph(GameClient* client);
 
     ~WorldGraph();
+
+    bool IsWalkable(Vector3i pos) const;
 
     void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex) override;
     void OnBlockChange(Vector3i position, Minecraft::BlockState newBlock, Minecraft::BlockState oldBlock) override;

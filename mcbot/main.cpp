@@ -183,6 +183,87 @@ private:
     ai::path::Plan* m_Plan;
     PlayerList* m_PlayerList;
 
+    struct CastResult {
+        std::vector<Vector3i> hit;
+        std::size_t length;
+        bool full;
+    };
+
+    CastResult RayCast(Minecraft::World* world, const Vector3d& from, Vector3d direction, std::size_t length) {
+        CastResult result;
+
+        std::vector<Vector3i> hit(length);
+
+        direction.Normalize();
+        result.length = length;
+        result.full = true;
+
+        for (std::size_t i = 0; i < length; ++i) {
+            Vector3i check = ToVector3i(from + (direction * i));
+            Minecraft::BlockPtr block = world->GetBlock(check).GetBlock();
+            bool walkable = m_Client->GetGraph()->IsWalkable(check);
+            if (walkable && block && !block->IsSolid()) {
+                hit.push_back(check);
+            } else {
+                result.full = false;
+                result.length = i;
+                break;
+            }
+        }
+
+        result.hit = hit;
+
+        return result;
+    }
+
+    bool IsNearBlocks(Vector3d pos) {
+        Minecraft::World* world = m_Client->GetWorld();
+        static const std::vector<Vector3d> directions = {
+            Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1)
+        };
+
+        for (Vector3d dir : directions) {
+            Minecraft::BlockPtr block = world->GetBlock(pos + dir).GetBlock();
+
+            if (!block || block->IsSolid()) return true;
+        }
+        return false;
+    }
+
+    void SmoothPath() {
+        if (!m_Plan) return;
+
+        std::vector<ai::path::Node*>& nodes = m_Plan->GetNodes();
+        if (nodes.size() <= 2) return;
+
+        std::vector<ai::path::Node*> output;
+        output.push_back(nodes[0]);
+        std::size_t index = 2;
+
+        while (index < nodes.size() - 1) {
+            Vector3d from = ToVector3d(nodes[index]->GetPosition());
+            Vector3d to = ToVector3d(output.back()->GetPosition());
+            Vector3d direction = to - from;
+            std::size_t length = (std::size_t)direction.Length() + 1;
+            direction.Normalize();
+
+            if (from.y != to.y || IsNearBlocks(from) || IsNearBlocks(to)) {
+                output.push_back(nodes[index - 1]);
+            } else {
+                CastResult result = RayCast(m_Client->GetWorld(), from, direction, length);
+                if (!result.full) {
+                    output.push_back(nodes[index - 1]);
+                }
+            }
+
+            ++index;
+        }
+
+        output.push_back(nodes.back());
+
+        nodes.clear();
+        nodes.insert(nodes.end(), output.begin(), output.end());
+    }
 public:
     PathfindAction(GameClient* client, PlayerList* playerList)
         : m_Client(client), m_PlayerList(playerList), m_Plan(nullptr)
@@ -225,6 +306,8 @@ public:
             s64 startTime = util::GetTime();
 
             m_Plan = m_Client->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), entityGroundPos);
+
+            SmoothPath();
 
             std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
         }

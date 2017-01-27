@@ -93,6 +93,8 @@ public:
     void AddNode(Node* node) {
         m_Path.push_back(node);
     }
+
+    std::vector<Node*>& GetNodes() { return m_Path; }
 };
 
 class PlanningNode {
