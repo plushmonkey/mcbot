@@ -11,7 +11,6 @@
 #include "Collision.h"
 #include "SynchronizationComponent.h"
 #include "SpeedComponent.h"
-#include "GraphComponent.h"
 
 #include "GameClient.h"
 #include "Pathing.h"
@@ -225,10 +224,7 @@ public:
         if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != entityGroundPos) {
             s64 startTime = util::GetTime();
 
-            auto graphComponent = GetActorComponent(m_Client, GraphComponent);
-            if (!graphComponent) return;
-
-            m_Plan = graphComponent->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), entityGroundPos);
+            m_Plan = m_Client->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), entityGroundPos);
 
             std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
         }
@@ -403,10 +399,6 @@ public:
           m_Players(client)
     {
         client->RegisterListener(this);
-
-        auto graphComponent = std::make_shared<GraphComponent>(m_Client);
-        graphComponent->SetOwner(m_Client);
-        m_Client->AddComponent(graphComponent);
 
         auto physics = std::make_shared<PhysicsComponent>();
         physics->SetOwner(client);

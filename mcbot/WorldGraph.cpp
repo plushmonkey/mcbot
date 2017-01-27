@@ -127,7 +127,7 @@ void WorldGraph::OnChunkUnload(Minecraft::ChunkColumnPtr chunk) {
     
 }
 
-void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockPtr newBlock, Minecraft::BlockPtr oldBlock) {
+void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockState newBlock, Minecraft::BlockState oldBlock) {
     const s32 InvalidationRadius = 1;
     std::vector<ai::path::Node*> nodes;
     

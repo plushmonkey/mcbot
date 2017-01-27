@@ -118,7 +118,6 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="GameClient.cpp" />
-    <ClCompile Include="GraphComponent.cpp" />
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathing.cpp" />
@@ -135,7 +134,6 @@
     <ClInclude Include="Component.h" />
     <ClInclude Include="Decision.h" />
     <ClInclude Include="GameClient.h" />
-    <ClInclude Include="GraphComponent.h" />
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="Pathing.h" />
     <ClInclude Include="PhysicsComponent.h" />

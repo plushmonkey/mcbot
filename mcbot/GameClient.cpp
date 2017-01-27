@@ -14,6 +14,7 @@ GameClient::GameClient()
     m_PlayerManager(&m_Dispatcher, &m_EntityManager),
     m_World(&m_Dispatcher),
     m_Inventories(&m_Dispatcher, &m_Connection),
+    m_Graph(new WorldGraph(this)),
     m_Connected(false)
 {
     m_Connection.RegisterListener(this);
@@ -56,9 +57,15 @@ void GameClient::run() {
             continue;
         }
 
-        Update(50.0 / 1000.0);
-        NotifyListeners(&ClientListener::OnTick);
+        s64 updateCount = (time - lastUpdate) / TickDelay;
 
-        lastUpdate = time;
+        lastUpdate += TickDelay * updateCount;
+
+        for (s64 i = 0; i < std::min(updateCount, MaximumUpdates); ++i) {
+            Update(50.0 / 1000.0);
+            NotifyListeners(&ClientListener::OnTick);
+        }
+
+        m_Graph->ProcessQueue();
     }
 }

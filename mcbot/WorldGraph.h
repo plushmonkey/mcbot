@@ -40,9 +40,9 @@ public:
 
     ~WorldGraph();
 
-    void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex);
-    void OnBlockChange(Vector3i position, Minecraft::BlockPtr newBlock, Minecraft::BlockPtr oldBlock);
-    void OnChunkUnload(Minecraft::ChunkColumnPtr chunk);
+    void OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex) override;
+    void OnBlockChange(Vector3i position, Minecraft::BlockState newBlock, Minecraft::BlockState oldBlock) override;
+    void OnChunkUnload(Minecraft::ChunkColumnPtr chunk) override;
 
     void ProcessQueue();
 };

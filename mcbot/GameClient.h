@@ -17,6 +17,7 @@ private:
     Minecraft::PlayerManager m_PlayerManager;
     Minecraft::World m_World;
     InventoryManager m_Inventories;
+    std::shared_ptr<WorldGraph> m_Graph;
 
     bool m_Connected;
 
@@ -37,7 +38,7 @@ public:
     InventoryManager* GetInventories() { return &m_Inventories; }
 
     std::shared_ptr<Inventory> GetInventory() { return m_Inventories.GetInventory(0); }
-
+    std::shared_ptr<WorldGraph> GetGraph() { return m_Graph; }
 };
 
 #endif
