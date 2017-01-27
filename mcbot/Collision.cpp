@@ -47,7 +47,7 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
         // Look for collisions in any blocks surrounding the ray
         for (Vector3d checkDirection : directions) {
             Vector3d checkPos = position + checkDirection;
-            Minecraft::BlockPtr block = m_World->GetBlock(checkPos);
+            Minecraft::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
 
             if (block && block->IsSolid()) {
                 AABB bounds = block->GetBoundingBox(checkPos);

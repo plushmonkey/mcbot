@@ -196,7 +196,7 @@ public:
 
         s32 y;
         for (y = (s32)pos.y; y >= 0; --y) {
-            Minecraft::BlockPtr block = world->GetBlock(Vector3i(pos.x, y, pos.z));
+            Minecraft::BlockPtr block = world->GetBlock(Vector3i(pos.x, y, pos.z)).GetBlock();
 
             if (block && block->IsSolid()) break;
         }
@@ -285,8 +285,8 @@ public:
 
         Vector3d projectedPos = pos + (vel * 50.0 / 1000.0);
         
-        Minecraft::BlockPtr projectedBlock = m_Client->GetWorld()->GetBlock(projectedPos);
-        Minecraft::BlockPtr block = m_Client->GetWorld()->GetBlock(projectedPos - Vector3d(0, 1, 0));
+        Minecraft::BlockPtr projectedBlock = m_Client->GetWorld()->GetBlock(projectedPos).GetBlock();
+        Minecraft::BlockPtr block = m_Client->GetWorld()->GetBlock(projectedPos - Vector3d(0, 1, 0)).GetBlock();
         
         if (!projectedBlock || projectedBlock->IsSolid() || !block || !block->IsSolid()) {
             physics->SetVelocity(-vel * 1.5);
@@ -478,6 +478,58 @@ public:
         DecisionAction* action = m_DecisionTree->Decide();
         if (action)
             action->Act();
+
+        auto physics = GetActorComponent(m_Client, PhysicsComponent);
+        if (!physics) return;
+
+        /*std::vector<Minecraft::BlockEntityPtr> blockEntities = m_Client->GetWorld()->GetBlockEntities();
+
+        bool found = false;
+        Vector3i multiPos;
+        for (Minecraft::BlockEntityPtr blockEntity : blockEntities) {
+            if (blockEntity->GetType() != Minecraft::BlockEntityType::Sign) continue;
+
+            std::shared_ptr<Minecraft::SignBlockEntity> sign = std::static_pointer_cast<Minecraft::SignBlockEntity>(blockEntity);
+
+            for (std::size_t i = 0; i < 4; ++i) {
+                if (sign->GetText(i).find(L"MULTI") != std::wstring::npos) {
+                    multiPos = sign->GetPosition();
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+        if (!found) return;
+
+        Minecraft::BlockState bState = m_Client->GetWorld()->GetBlock(multiPos);
+        float angle = 0.0f;
+
+        if (bState.GetBlock()->GetName().compare(L"Standing Sign Block") == 0) {
+            u16 data = bState.GetData() & ((1 << 4) - 1);
+            const float startAngle = (3.0f / 2.0f * 3.14159f);
+            angle = startAngle - (2.0f * 3.14159f * data / 16.0f);
+        } else if (bState.GetBlock()->GetName().compare(L"Wall-mounted Sign Block") == 0) {
+            u16 data = bState.GetData() & ((1 << 4) - 1);
+            switch (data) {
+                case 2:
+                    angle = 0.5f * 3.1415f;
+                break;
+                case 3:
+                    angle = 3.0f / 2.0f * 3.1415f;
+                break;
+                case 4:
+                    angle = 3.1415f;
+                break;
+                case 5:
+                    angle = 0.0f;
+                break;
+            }
+        }
+
+        Vector3d dir(std::cos(angle), 0, -std::sin(angle));
+
+        std::cout << "Stand to reach sign: " << multiPos + ToVector3i(dir) << std::endl;*/
     }
 };
 

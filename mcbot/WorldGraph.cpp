@@ -53,10 +53,10 @@ ai::path::Node* WorldGraph::GetNode(Vector3i pos) {
 bool WorldGraph::IsWalkable(Vector3i pos) const {
     Minecraft::World* world = m_Client->GetWorld();
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
+    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
-    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
-    Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0));
+    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
+    Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0)).GetBlock();
 
     return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
 }
@@ -64,15 +64,15 @@ bool WorldGraph::IsWalkable(Vector3i pos) const {
 int WorldGraph::IsSafeFall(Vector3i pos) const {
     Minecraft::World* world = m_Client->GetWorld();
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
+    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
-    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0));
+    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
 
     if (!checkBlock || checkBlock->IsSolid()) return 0;
     if (!aBlock || aBlock->IsSolid()) return 0;
 
     for (int i = 0; i < 4; ++i) {
-        Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i + 1, 0));
+        Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i + 1, 0)).GetBlock();
 
         if (bBlock && bBlock->IsSolid()) return i + 1;
         //if (bBlock && bBlock->IsSolid() || (bBlock->GetType() == 8 || bBlock->GetType() == 9)) return i + 1;
@@ -83,7 +83,7 @@ int WorldGraph::IsSafeFall(Vector3i pos) const {
 
 bool WorldGraph::IsWater(Vector3i pos) const {
     Minecraft::World* world = m_Client->GetWorld();
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos);
+    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
     return checkBlock && (checkBlock->GetType() == 8 || checkBlock->GetType() == 9);
 }
@@ -218,7 +218,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
         Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1),
     };
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(checkPos);
+    Minecraft::BlockPtr checkBlock = world->GetBlock(checkPos).GetBlock();
 
     // Skip because it's not loaded yet or it's solid
     if (!checkBlock || checkBlock->IsSolid()) return links;   
@@ -249,7 +249,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
         for (int i = 0; i < fallDist; ++i) {
             Vector3i fallPos = checkPos - Vector3i(0, i + 1, 0);
 
-            Minecraft::BlockPtr block = world->GetBlock(fallPos);
+            Minecraft::BlockPtr block = world->GetBlock(fallPos).GetBlock();
             if (!block || block->IsSolid()) break;
 
             links.emplace_back(current, fallPos, 1.0f);

@@ -18,7 +18,7 @@ const u16 StillWater = 9;
 const u16 FlowingWater = 8;
 
 bool IsWater(Minecraft::World* world, Vector3d pos) {
-    Minecraft::BlockPtr block = world->GetBlock(pos);
+    Minecraft::BlockPtr block = world->GetBlock(pos).GetBlock();
 
     return block && (block->GetType() == StillWater || block->GetType() == FlowingWater);
 }
