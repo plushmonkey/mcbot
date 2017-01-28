@@ -2,16 +2,20 @@
 
 #include "Actor.h"
 #include "PhysicsComponent.h"
+#include "GameClient.h"
 #include <iostream>
+
 const char* SynchronizationComponent::name = "Synchronization";
 
 void SynchronizationComponent::OnClientSpawn(Minecraft::PlayerPtr player) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (physics == nullptr) return;
 
+    Vector3d oldPos = physics->GetPosition();
     physics->SetOrientation(player->GetEntity()->GetYaw());
     physics->SetPosition(player->GetEntity()->GetPosition());
     m_Spawned = true;
+    std::cout << "Position corrected to " << physics->GetPosition() << " from " << oldPos << std::endl;
 }
 
 void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet) {
@@ -22,6 +26,23 @@ void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateH
         Minecraft::Packets::Outbound::ClientStatusPacket status(action);
 
         m_Connection->SendPacket(&status);
+    }
+}
+
+void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::EntityVelocityPacket* packet) {    
+    auto physics = GetActorComponent(m_Owner, PhysicsComponent);
+    if (physics == nullptr) return;
+
+    GameClient* client = dynamic_cast<GameClient*>(m_Owner);
+    if (!client) return;
+
+    Minecraft::EntityId eid = packet->GetEntityId();
+
+    auto playerEntity = client->GetEntityManager()->GetPlayerEntity();
+    if (playerEntity && playerEntity->GetEntityId() == eid) {
+        Vector3d newVelocity = ToVector3d(packet->GetVelocity()) * 20.0 / 8000.0;
+        std::cout << "Set velocity to " << newVelocity << std::endl;
+        physics->SetVelocity(newVelocity);
     }
 }
 

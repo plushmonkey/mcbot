@@ -27,6 +27,7 @@ public:
         m_PlayerManager->RegisterListener(this);
 
         dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::UpdateHealth, this);
+        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::EntityVelocity, this);
     }
 
     ~SynchronizationComponent() {
@@ -38,6 +39,7 @@ public:
     void OnClientSpawn(Minecraft::PlayerPtr player);
 
     void HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet);
+    void HandlePacket(Minecraft::Packets::Inbound::EntityVelocityPacket* packet);
 
     void Update(double dt);
 

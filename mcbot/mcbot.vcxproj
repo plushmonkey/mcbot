@@ -87,7 +87,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_NO_DEBUG_HEAP=1;WIN32;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_ITERATOR_DEBUGGING=0;WIN32;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,12 +119,14 @@
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="GameClient.cpp" />
     <ClCompile Include="Inventory.cpp" />
+    <ClCompile Include="JumpComponent.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathing.cpp" />
     <ClCompile Include="PhysicsComponent.cpp" />
     <ClCompile Include="SpeedComponent.cpp" />
     <ClCompile Include="Steering.cpp" />
     <ClCompile Include="SynchronizationComponent.cpp" />
+    <ClCompile Include="TargetingComponent.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="WorldGraph.cpp" />
   </ItemGroup>
@@ -135,11 +137,13 @@
     <ClInclude Include="Decision.h" />
     <ClInclude Include="GameClient.h" />
     <ClInclude Include="Inventory.h" />
+    <ClInclude Include="JumpComponent.h" />
     <ClInclude Include="Pathing.h" />
     <ClInclude Include="PhysicsComponent.h" />
     <ClInclude Include="SpeedComponent.h" />
     <ClInclude Include="Steering.h" />
     <ClInclude Include="SynchronizationComponent.h" />
+    <ClInclude Include="TargetingComponent.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="WorldGraph.h" />
   </ItemGroup>

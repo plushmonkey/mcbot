@@ -1,5 +1,6 @@
 #include "Collision.h"
-#include "Math.h"
+
+#include <iostream>
 
 template <typename T>
 inline T Sign(T val) {
@@ -39,7 +40,10 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
     Vector3d direction = Vector3Normalize(rayVector);
     double length = rayVector.Length();
 
-    Ray ray(from, rayVector);
+    Ray ray(from, direction);
+
+    if (collision)
+        *collision = Collision();
 
     for (double i = 0; i < length; ++i) {
         Vector3d position = from + direction * i;
@@ -54,8 +58,12 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
                 double distance;
 
                 if (bounds.Intersects(ray, &distance)) {
+                    if (distance < 0 || distance > length) continue;
+
                     Vector3d collisionHit = from + direction * distance;
                     Vector3d normal = GetClosestFaceNormal(collisionHit, bounds);
+
+                    //std::cout << "Collision from " << from << " at " << collisionHit << " vector " << rayVector << " normal " << normal << " dist: " << distance << " len: " << length << std::endl;
                     
                     if (collision)
                         *collision = Collision(collisionHit, normal);

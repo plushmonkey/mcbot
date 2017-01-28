@@ -11,6 +11,8 @@
 #include "Collision.h"
 #include "SynchronizationComponent.h"
 #include "SpeedComponent.h"
+#include "JumpComponent.h"
+#include "TargetingComponent.h"
 
 #include "GameClient.h"
 #include "Pathing.h"
@@ -71,7 +73,7 @@ public:
             find->second.lastPosition = pos;
 
             Vector3d smoothed = find->second.velocity.GetSmoothedValue();
-            entity->SetVelocity(smoothed);
+            //entity->SetVelocity(smoothed);
         }
     }
 
@@ -99,11 +101,10 @@ public:
     }
 };
 
-class PathfindAction : public DecisionAction {
+class Pathfinder {
 private:
     GameClient* m_Client;
     ai::path::Plan* m_Plan;
-    PlayerList* m_PlayerList;
 
     struct CastResult {
         std::vector<Vector3i> hit;
@@ -187,8 +188,8 @@ private:
         nodes.insert(nodes.end(), output.begin(), output.end());
     }
 public:
-    PathfindAction(GameClient* client, PlayerList* playerList)
-        : m_Client(client), m_PlayerList(playerList), m_Plan(nullptr)
+    Pathfinder(GameClient* client)
+        : m_Client(client), m_Plan(nullptr)
     {
         
     }
@@ -206,40 +207,41 @@ public:
         return Vector3i(pos.x, y + 1, pos.z);
     }
 
-    void Act() override {
+    void Update() {
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
         if (!physics) return;
 
-        Minecraft::PlayerPtr targetPlayer = m_PlayerList->GetPlayerByName(L"plushmonkey");
-        if (targetPlayer == nullptr) {
-            physics->SetVelocity(Vector3d(0, 0, 0));
+        auto targeting = GetActorComponent(m_Client, TargetingComponent);
+        if (!targeting) return;
+        
+        Vector3i target = targeting->GetTarget();
+        Vector3i toTarget = target - ToVector3i(physics->GetPosition());
+        if (toTarget.LengthSq() <= 2.0 * 2.0) {
+            Vector3d accel = -physics->GetVelocity() * 20;
+            accel.y = 0;
+            physics->ApplyAcceleration(accel);
+            //physics->ClearHorizontalVelocity();
             return;
         }
+        
+        Vector3i targetGroundPos = GetGroundLevel(target);
 
-        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
-        if (!entity) {
-            physics->SetVelocity(Vector3d(0, 0, 0));
-            return;
-        }
-
-        Vector3i entityGroundPos = GetGroundLevel(ToVector3i(entity->GetPosition()));
-
-        if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != entityGroundPos) {
+        if (m_Plan == nullptr || !m_Plan->HasNext() || m_Plan->GetGoal()->GetPosition() != targetGroundPos) {
             s64 startTime = util::GetTime();
 
-            m_Plan = m_Client->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), entityGroundPos);
+            m_Plan = m_Client->GetGraph()->FindPath(GetGroundLevel(ToVector3i(physics->GetPosition())), targetGroundPos);
 
             SmoothPath();
 
-            std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
+            //std::cout << "Plan built in " << (util::GetTime() - startTime) << "ms.\n";
         }
 
-        if (!m_Plan) {
-            std::cout << "No plan to " << entity->GetPosition() << std::endl;
+        if (!m_Plan || m_Plan->GetSize() == 0) {
+            std::cout << "No plan to " << targetGroundPos << std::endl;
         }
 
         Vector3d position = physics->GetPosition();
-        Vector3d target = entity->GetPosition();
+        Vector3d alignTarget = ToVector3d(target);
 
         ai::PathFollowSteering steer(m_Client, m_Plan, 0.25);
         
@@ -248,10 +250,10 @@ public:
         physics->ApplyRotation(steering.rotation);
 
         if (m_Plan && m_Plan->GetCurrent())
-            target = (target + ToVector3d(m_Plan->GetCurrent()->GetPosition())) / 2.0;
-        else
-            physics->SetVelocity(Vector3d(0, 0, 0));
-        ai::FaceSteering align(m_Client, target, 0.1, 1, 1);
+            alignTarget = (alignTarget + ToVector3d(m_Plan->GetCurrent()->GetPosition())) / 2.0;
+        //else
+          //  physics->ClearHorizontalVelocity();
+        ai::FaceSteering align(m_Client, alignTarget, 0.1, 1, 1);
         physics->ApplyRotation(align.GetSteering().rotation);
     }
 };
@@ -328,11 +330,16 @@ public:
         Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
         auto entity = targetPlayer->GetEntity();
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
+        auto targeting = GetActorComponent(m_Client, TargetingComponent);
 
         ai::FaceSteering align(m_Client, entity->GetPosition(), 0.1, 1, 1);
 
         physics->ApplyRotation(align.GetSteering().rotation);
-        physics->SetVelocity(Vector3d(0, 0, 0));
+        //physics->ClearHorizontalVelocity();
+        Vector3d entityHeading = util::OrientationToVector(entity->GetYaw());
+
+        Vector3d target = entity->GetPosition() - entityHeading * 2;
+        targeting->SetTarget(ToVector3i(target));
 
         s64 time = util::GetTime();
 
@@ -383,6 +390,33 @@ public:
     }
 };
 
+class TargetPlayerAction : public DecisionAction {
+private:
+    GameClient* m_Client;
+
+public:
+    TargetPlayerAction(GameClient* client) : m_Client(client) { }
+
+    bool HasTarget() {
+        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        if (!targetPlayer) return false;
+
+        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+        return entity != nullptr;
+    }
+
+    void Act() override {
+        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        auto entity = targetPlayer->GetEntity();
+
+        auto targeting = GetActorComponent(m_Client, TargetingComponent);
+        if (!targeting) return;
+
+        targeting->SetTargetEntity(entity->GetEntityId());
+        targeting->SetTarget(ToVector3i(entity->GetPosition()));
+    }
+};
+
 class BotUpdate : public ClientListener {
 private:
     GameClient* m_Client;
@@ -390,7 +424,7 @@ private:
     s64 m_StartupTime;
     bool m_Built;
 
-    std::shared_ptr<PathfindAction> m_PathfindAction;
+    std::shared_ptr<Pathfinder> m_Pathfinder;
 
     DecisionTreeNodePtr m_DecisionTree;
 
@@ -401,7 +435,7 @@ public:
     {
         client->RegisterListener(this);
 
-        auto physics = std::make_shared<PhysicsComponent>();
+        auto physics = std::make_shared<PhysicsComponent>(m_Client->GetWorld());
         physics->SetOwner(client);
         physics->SetMaxAcceleration(100.0f);
         physics->SetMaxRotation(3.14159 * 8);
@@ -416,15 +450,24 @@ public:
         speed->SetMovementType(SpeedComponent::Movement::Normal);
         m_Client->AddComponent(speed);
 
+        auto jump = std::make_shared<JumpComponent>(m_Client->GetWorld(), 200);
+        jump->SetOwner(client);
+        client->AddComponent(jump);
+
+        auto targeting = std::make_shared<TargetingComponent>();
+        targeting->SetOwner(client);
+        client->AddComponent(targeting);
+
         m_StartupTime = util::GetTime();
         m_Built = false;
 
         Minecraft::BlockPtr block = Minecraft::BlockRegistry::GetInstance()->GetBlock(1, 0);
 
-        m_PathfindAction = std::make_shared<PathfindAction>(m_Client, &m_Players);
+        m_Pathfinder = std::make_shared<Pathfinder>(m_Client);
+        auto targetPlayer = std::make_shared<TargetPlayerAction>(m_Client);
 
         std::shared_ptr<DecisionTreeNode> pathfindDecision = std::make_shared<RangeDecision<bool>>(
-            m_PathfindAction, std::make_shared<WanderAction>(m_Client), std::bind(&BotUpdate::HasValidTarget, this), true, true
+            targetPlayer, std::make_shared<WanderAction>(m_Client), std::bind(&TargetPlayerAction::HasTarget, targetPlayer), true, true
         );
 
         m_DecisionTree = std::make_shared<RangeDecision<double>>(
@@ -435,14 +478,6 @@ public:
     ~BotUpdate() {
         m_Client->RemoveComponent(Component::GetIdFromName(SynchronizationComponent::name));
         m_Client->UnregisterListener(this);
-    }
-
-    bool HasValidTarget() {
-        Minecraft::PlayerPtr targetPlayer = m_Players.GetPlayerByName(L"plushmonkey");
-        if (!targetPlayer) return false;
-
-        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
-        return entity != nullptr;
     }
 
     double DistanceToTarget() {
@@ -475,54 +510,8 @@ public:
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
         if (!physics) return;
 
-        /*std::vector<Minecraft::BlockEntityPtr> blockEntities = m_Client->GetWorld()->GetBlockEntities();
-
-        bool found = false;
-        Vector3i multiPos;
-        for (Minecraft::BlockEntityPtr blockEntity : blockEntities) {
-            if (blockEntity->GetType() != Minecraft::BlockEntityType::Sign) continue;
-
-            std::shared_ptr<Minecraft::SignBlockEntity> sign = std::static_pointer_cast<Minecraft::SignBlockEntity>(blockEntity);
-
-            for (std::size_t i = 0; i < 4; ++i) {
-                if (sign->GetText(i).find(L"MULTI") != std::wstring::npos) {
-                    multiPos = sign->GetPosition();
-                    found = true;
-                    break;
-                }
-            }
-            if (found) break;
-        }
-        if (!found) return;
-
-        Minecraft::BlockState bState = m_Client->GetWorld()->GetBlock(multiPos);
-        float angle = 0.0f;
-
-        if (bState.GetBlock()->GetName().compare(L"Standing Sign Block") == 0) {
-            u16 data = bState.GetData() & ((1 << 4) - 1);
-            const float startAngle = (3.0f / 2.0f * 3.14159f);
-            angle = startAngle - (2.0f * 3.14159f * data / 16.0f);
-        } else if (bState.GetBlock()->GetName().compare(L"Wall-mounted Sign Block") == 0) {
-            u16 data = bState.GetData() & ((1 << 4) - 1);
-            switch (data) {
-                case 2:
-                    angle = 0.5f * 3.1415f;
-                break;
-                case 3:
-                    angle = 3.0f / 2.0f * 3.1415f;
-                break;
-                case 4:
-                    angle = 3.1415f;
-                break;
-                case 5:
-                    angle = 0.0f;
-                break;
-            }
-        }
-
-        Vector3d dir(std::cos(angle), 0, -std::sin(angle));
-
-        std::cout << "Stand to reach sign: " << multiPos + ToVector3i(dir) << std::endl;*/
+        m_Pathfinder->Update();
+        physics->Integrate(50.0 / 1000.0);
     }
 };
 

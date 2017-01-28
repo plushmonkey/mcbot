@@ -3,12 +3,15 @@
 
 #include <mclib/Vector.h>
 #include "Component.h"
+#include "Collision.h"
 
 class PhysicsComponent : public Component {
 public:
     static const char* name;
 
 private:
+    CollisionDetector m_CollisionDetector;
+
     Vector3d m_Position;
     Vector3d m_Velocity;
     double m_Orientation;
@@ -21,7 +24,8 @@ private:
     double m_MaxSpeed;
 
 public:
-    PhysicsComponent() : m_Orientation(0), m_MaxSpeed(1), m_MaxAcceleration(1), m_MaxRotation(3.14 * 2)
+    PhysicsComponent(Minecraft::World* world) 
+        : m_CollisionDetector(world), m_Orientation(0), m_MaxSpeed(1), m_MaxAcceleration(1), m_MaxRotation(3.14 * 2)
     {
 
     }
@@ -35,11 +39,9 @@ public:
     double GetMaxAcceleration() const { return m_MaxAcceleration; }
     double GetMaxRotation() const { return m_MaxRotation; }
     
-
-    void SetPosition(const Vector3d& pos) { 
-        m_Position = pos;
-    }
+    void SetPosition(const Vector3d& pos) { m_Position = pos; }
     void SetVelocity(const Vector3d& velocity) { m_Velocity = velocity; }
+    void ClearHorizontalVelocity() { m_Velocity = Vector3d(0, m_Velocity.y, 0); }
     void SetOrientation(double orientation) { m_Orientation = orientation; }
     void SetMaxSpeed(double maxSpeed) { m_MaxSpeed = maxSpeed; }
     void SetMaxAcceleration(double maxAccel) { m_MaxAcceleration = maxAccel; }
@@ -53,7 +55,8 @@ public:
         m_Rotation += rotation;
     }
 
-    void Update(double dt);
+    void Integrate(double dt);
+    void Update(double dt) { }
 
     const char* GetName() const { return name; }
 };

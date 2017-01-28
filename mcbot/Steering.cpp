@@ -1,5 +1,6 @@
 #include "Steering.h"
 #include "PhysicsComponent.h"
+#include "JumpComponent.h"
 #include "Utility.h"
 #include "Pathing.h"
 #include "Collision.h"
@@ -49,6 +50,7 @@ SteeringAcceleration SeekSteering::GetSteering() {
     if (physics == nullptr) return steering;
 
     steering.movement = Vector3Normalize(m_Target - physics->GetPosition()) * physics->GetMaxAcceleration();
+    steering.movement.y = 0;
     steering.rotation = 0;
 
     return steering;
@@ -220,12 +222,11 @@ SteeringAcceleration PathFollowSteering::GetSteering() {
     Vector3d pos = physics->GetPosition();
     Vector3i tar = current->GetPosition();
 
-    if (std::abs(pos.y - tar.y) > 0.5) {
-        //Vector3d newPos = physics->GetPosition();
-        //newPos.y = (double)tar.y;
-
-        Vector3d newPos = m_Target;
-        physics->SetPosition(newPos);
+    if (pos.y < tar.y) {
+        auto jump = GetActorComponent(m_Player, JumpComponent);
+        if (jump) {
+            jump->Jump();
+        }
     }
 
     return SeekSteering::GetSteering();
