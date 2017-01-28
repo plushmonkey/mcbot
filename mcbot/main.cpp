@@ -71,8 +71,7 @@ public:
             find->second.lastPosition = pos;
 
             Vector3d smoothed = find->second.velocity.GetSmoothedValue();
-            Vector3d entityVelocity = smoothed * 8000;
-            entity->SetVelocity(Vector3s((short)entityVelocity.x, (short)entityVelocity.y, (short)entityVelocity.z));
+            entity->SetVelocity(smoothed);
         }
     }
 
@@ -99,83 +98,6 @@ public:
         return nullptr;
     }
 };
-
-/*
-class BowAttackUpdate : public AttackUpdate {
-private:
-    enum { AttackDelay = 1 };
-    enum { DrawLength = 1500 };
-    enum { ShootDelay = 750 };
-
-    enum State {
-        Drawing,
-        Idle
-    };
-
-    State m_State;
-    s64 m_StateStart;
-
-public:
-    BowAttackUpdate(GameClient* client, Minecraft::PlayerPtr target)
-        : AttackUpdate(client, target, AttackDelay),
-          m_State(Idle)
-    {
-
-    }
-
-    void Attack() {
-        s64 time = util::GetTime();
-        Vector3d botPos = m_Client->GetPlayerController()->GetPosition();
-        Vector3d targetPos = m_Target->GetEntity()->GetPosition();
-
-        using namespace Minecraft::Packets::Outbound;
-
-        if ((targetPos - botPos).LengthSq() < 4*4) return;
-
-        Vector3d bowPos = botPos + Vector3d(0, 1, 0);
-        Vector3d toTarget = (targetPos + Vector3d(0, 1, 0)) - bowPos;
-
-        CastResult cast = RayCast(m_Client->GetWorld(), bowPos, toTarget, (std::size_t)toTarget.Length());
-        // Stop the current attack unless it's almost ready to fire
-        if (!cast.full && (m_State != State::Drawing || time < m_StateStart + DrawLength * .90)) {
-            m_State = State::Idle;
-
-            m_StateStart = time;
-            const s32 StoneSwordId = 272;
-
-            SelectItem(StoneSwordId);
-        }
-
-        if (m_State == State::Idle && time >= m_StateStart + ShootDelay) {
-            const s32 BowId = 261;
-
-            if (!SelectItem(BowId)) {
-                m_StateStart = time;
-                m_State = State::Idle;
-                return;
-            }
-
-            std::cout << "Drawing bow\n";
-            m_StateStart = time;
-            m_State = State::Drawing;
-
-            s32 selectedSlot = m_Client->GetInventory()->GetSelectedHotbarSlot();
-            Minecraft::Slot* slot = m_Client->GetInventory()->GetSlot(selectedSlot + Inventory::HOTBAR_SLOT_START);
-
-            PlayerBlockPlacementPacket bowDrawPacket(Vector3i(-1, -1, -1), 255, *slot, Vector3i(0, 0, 0));
-            m_Client->GetConnection()->SendPacket(&bowDrawPacket);
-        }
-
-        if (m_State == State::Drawing && time >= m_StateStart + DrawLength) {
-            std::cout << "Shooting bow\n";
-            m_StateStart = time;
-            m_State = State::Idle;
-
-            PlayerDiggingPacket shootPacket(PlayerDiggingPacket::Status::ShootArrow, Vector3i(0, 0, 0), 0);
-            m_Client->GetConnection()->SendPacket(&shootPacket);
-        }
-    }
-};*/
 
 class PathfindAction : public DecisionAction {
 private:
@@ -317,11 +239,7 @@ public:
         }
 
         Vector3d position = physics->GetPosition();
-
         Vector3d target = entity->GetPosition();
-        Vector3d velocity = ToVector3d(entity->GetVelocity()) * (20.0 / 8000.0);
-
-        static CollisionDetector collisionDetector(m_Client->GetWorld());
 
         ai::PathFollowSteering steer(m_Client, m_Plan, 0.25);
         

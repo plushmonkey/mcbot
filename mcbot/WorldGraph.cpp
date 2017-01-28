@@ -110,7 +110,8 @@ void WorldGraph::OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkCo
 }
 
 void WorldGraph::OnChunkUnload(Minecraft::ChunkColumnPtr chunk) {
-    
+    if (chunk == nullptr) return;
+
     auto remove = std::remove_if(m_BuildQueue.GetData().begin(), m_BuildQueue.GetData().end(), [&](Vector3i area) {
         auto meta = chunk->GetMetadata();
         return area.x == meta.x && area.z == meta.z;
@@ -130,6 +131,16 @@ void WorldGraph::OnChunkUnload(Minecraft::ChunkColumnPtr chunk) {
 void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockState newBlock, Minecraft::BlockState oldBlock) {
     const s32 InvalidationRadius = 1;
     std::vector<ai::path::Node*> nodes;
+
+    if (position.y <= 0 || position.y >= 255) return;
+
+    Vector3i chunkPos = position / 16;
+
+    auto iter = std::find_if(m_ProcessedChunks.begin(), m_ProcessedChunks.end(), [chunkPos](Vector3i processed) {
+        return processed.x == chunkPos.x && processed.z == chunkPos.z;
+    });
+    // Don't process block changes when the chunk hasn't been added to the graph yet.
+    if (iter == m_ProcessedChunks.end()) return;
     
     // Get all of the nodes surrounding the changed position
     for (s32 y = -InvalidationRadius; y <= InvalidationRadius; ++y) {
@@ -192,6 +203,8 @@ void WorldGraph::ProcessQueue() {
 
     Minecraft::ChunkPtr chunk = (*col)[(std::size_t)current.y];
     if (!chunk) return;
+
+    m_ProcessedChunks.push_back(current);
 
     std::vector<Link> links = ProcessChunk(chunk, col->GetMetadata(), (s32)current.y);
     for (Link link : links) {

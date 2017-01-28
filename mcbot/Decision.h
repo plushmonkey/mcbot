@@ -33,7 +33,7 @@ public:
 
     }
 
-    virtual DecisionTreeNode* GetBranch() = 0;
+    virtual DecisionTreeNodePtr GetBranch() = 0;
 
     DecisionAction* Decide() {
         return GetBranch()->Decide();
@@ -56,7 +56,7 @@ public:
 
     }
 
-    DecisionTreeNodePtr GetBranch() {
+    DecisionTreeNodePtr GetBranch() override {
         T testValue = m_TestFunction();
 
         if (m_MinValue <= testValue && testValue <= m_MaxValue)
@@ -64,7 +64,30 @@ public:
         return m_FalseNode;
     }
 
-    DecisionAction* Decide() {
+    DecisionAction* Decide() override {
+        return GetBranch()->Decide();
+    }
+};
+
+class BooleanDecision : public Decision {
+public:
+    typedef std::function<bool()> TestFunction;
+private:
+    TestFunction m_TestFunction;
+
+public:
+    BooleanDecision(DecisionTreeNodePtr trueNode, DecisionTreeNodePtr falseNode, TestFunction testFunction)
+        : Decision(trueNode, falseNode), m_TestFunction(testFunction)
+    {
+
+    }
+
+    DecisionTreeNodePtr GetBranch() override {
+        if (m_TestFunction()) return m_TrueNode;
+        return m_FalseNode;
+    }
+
+    DecisionAction* Decide() override {
         return GetBranch()->Decide();
     }
 };

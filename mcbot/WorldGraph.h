@@ -19,6 +19,7 @@ private:
 
     GameClient* m_Client;
     ai::path::PriorityQueue<Vector3i, ChunkTaskComparator> m_BuildQueue;
+    std::vector<Vector3i> m_ProcessedChunks;
 
     ai::path::Node* GetNode(Vector3i pos);
     int IsSafeFall(Vector3i pos) const;
