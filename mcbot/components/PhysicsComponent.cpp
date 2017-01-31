@@ -34,7 +34,7 @@ void PhysicsComponent::Integrate(double dt) {
     const double epsilon = 0.0001;
     m_Velocity += m_Acceleration * dt;
     m_Orientation += m_Rotation * dt;
-
+    
     if (m_Velocity.LengthSq() < epsilon) m_Velocity = Vector3d(0, 0, 0);
     m_Velocity *= 0.97;
 

@@ -78,8 +78,4 @@ void SynchronizationComponent::Update(double dt) {
         (float)physics->GetOrientation() * 180.0f / 3.14159f, pitch, true);
 
     m_Connection->SendPacket(&response);
-
-    auto action = Minecraft::Packets::Outbound::ClientStatusPacket::Action::PerformRespawn;
-    Minecraft::Packets::Outbound::ClientStatusPacket status(action);
-    m_Connection->SendPacket(&status);
 }

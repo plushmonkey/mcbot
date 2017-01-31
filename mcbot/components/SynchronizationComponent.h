@@ -18,7 +18,7 @@ private:
     Vector3i m_SpawnPosition;
     bool m_Spawned;
     bool m_Dead;
-
+    
 public:
     SynchronizationComponent(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection, Minecraft::PlayerManager* playerManager) 
         : Minecraft::Packets::PacketHandler(dispatcher), 
