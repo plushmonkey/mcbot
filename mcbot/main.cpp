@@ -435,7 +435,7 @@ public:
     {
         client->RegisterListener(this);
 
-        auto physics = std::make_shared<PhysicsComponent>(m_Client->GetWorld());
+        auto physics = std::make_shared<PhysicsComponent>(m_Client->GetWorld(), AABB(Vector3d(-0.3, 0.0, -0.3), Vector3d(0.3, 1.8, 0.3)));
         physics->SetOwner(client);
         physics->SetMaxAcceleration(100.0f);
         physics->SetMaxRotation(3.14159 * 8);

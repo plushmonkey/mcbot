@@ -4,44 +4,19 @@
 #include "Utility.h"
 #include "Pathing.h"
 #include "Collision.h"
+#include "Math.h"
 
 #include <iostream>
 #include <random>
 
 namespace ai {
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 namespace {
-
-double wrapMax(double x, double max)
-{
-    return fmod(max + fmod(x, max), max);
-}
-
-double wrapMinMax(double x, double min, double max)
-{
-    return min + wrapMax(x - min, max - min);
-}
 
 std::random_device dev;
 std::mt19937 engine(dev());
 
-double randomBinomial() {
-    std::uniform_real_distribution<double> dist(0, 1);
-
-    return dist(engine) - dist(engine);
-}
-
 } // ns
-
-
-double wrapToPi(double rads) {
-    //return rads - 2 * M_PI * std::floor((rads + M_PI) / (2 * M_PI));
-    return wrapMinMax(rads, -M_PI, M_PI);
-}
 
 SteeringAcceleration SeekSteering::GetSteering() {
     SteeringAcceleration steering;
@@ -171,7 +146,7 @@ SteeringAcceleration WanderSteering::GetSteering() {
     auto physics = GetActorComponent(m_Player, PhysicsComponent);
     if (physics == nullptr) return SteeringAcceleration();
 
-    m_WanderOrientation += randomBinomial() * m_WanderRate;
+    m_WanderOrientation += randomBinomial(engine) * m_WanderRate;
     m_TargetOrientation = m_WanderOrientation + physics->GetOrientation();
 
     m_Target = physics->GetPosition() + util::OrientationToVector(physics->GetOrientation()) * m_WanderOffset;

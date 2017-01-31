@@ -42,6 +42,7 @@ void GameClient::run() {
     const s64 TickDelay = 1000/20;
     const s64 MaximumUpdates = 3;
     s64 lastUpdate = util::GetTime();
+    s64 startupTime = util::GetTime();
 
     while (m_Connected) {
         try {
@@ -65,6 +66,10 @@ void GameClient::run() {
             Update(50.0 / 1000.0);
             NotifyListeners(&ClientListener::OnTick);
         }
+
+#ifdef _DEBUG
+        if (util::GetTime() < startupTime + 30000) continue;
+#endif
 
         m_Graph->ProcessQueue();
     }

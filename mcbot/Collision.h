@@ -3,6 +3,8 @@
 
 #include <mclib/World.h>
 
+class PhysicsComponent;
+
 class Collision {
 private:
     Vector3d m_Position;
@@ -20,10 +22,14 @@ class CollisionDetector {
 private:
     Minecraft::World* m_World;
 
+    std::vector<Vector3i> GetSurroundingLocations(AABB bounds);
+
 public:
     CollisionDetector(Minecraft::World* world) : m_World(world) { }
 
     bool DetectCollision(Vector3d from, Vector3d rayVector, Collision* collision) const;
+
+    void ResolveCollisions(PhysicsComponent* physics, double dt);
 };
 
 #endif

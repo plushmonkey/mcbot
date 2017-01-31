@@ -138,6 +138,7 @@
     <ClInclude Include="GameClient.h" />
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="JumpComponent.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="Pathing.h" />
     <ClInclude Include="PhysicsComponent.h" />
     <ClInclude Include="SpeedComponent.h" />

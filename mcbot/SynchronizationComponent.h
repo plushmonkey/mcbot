@@ -15,19 +15,23 @@ public:
 private:
     Minecraft::Connection* m_Connection;
     Minecraft::PlayerManager* m_PlayerManager;
+    Vector3i m_SpawnPosition;
     bool m_Spawned;
+    bool m_Dead;
 
 public:
     SynchronizationComponent(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection, Minecraft::PlayerManager* playerManager) 
         : Minecraft::Packets::PacketHandler(dispatcher), 
           m_Connection(connection),
           m_PlayerManager(playerManager), 
-          m_Spawned(false)
+          m_Spawned(false),
+          m_Dead(false)
     {
         m_PlayerManager->RegisterListener(this);
 
         dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::UpdateHealth, this);
         dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::EntityVelocity, this);
+        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::SpawnPosition, this);
     }
 
     ~SynchronizationComponent() {
@@ -40,6 +44,7 @@ public:
 
     void HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet);
     void HandlePacket(Minecraft::Packets::Inbound::EntityVelocityPacket* packet);
+    void HandlePacket(Minecraft::Packets::Inbound::SpawnPositionPacket* packet);
 
     void Update(double dt);
 

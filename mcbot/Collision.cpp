@@ -1,4 +1,6 @@
 #include "Collision.h"
+#include "PhysicsComponent.h"
+#include "Math.h"
 
 #include <iostream>
 
@@ -63,11 +65,9 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
                     Vector3d collisionHit = from + direction * distance;
                     Vector3d normal = GetClosestFaceNormal(collisionHit, bounds);
 
-                    //std::cout << "Collision from " << from << " at " << collisionHit << " vector " << rayVector << " normal " << normal << " dist: " << distance << " len: " << length << std::endl;
-                    
                     if (collision)
                         *collision = Collision(collisionHit, normal);
-                    
+
                     return true;
                 }
             }
@@ -75,4 +75,71 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
     }
 
     return false;
+}
+
+std::vector<Vector3i> CollisionDetector::GetSurroundingLocations(AABB bounds) {
+    std::vector<Vector3i> locs;
+
+    s32 radius = 2;
+    for (s32 y = (s32)bounds.min.y - radius; y < (s32)bounds.max.y + radius; ++y) {
+        for (s32 z = (s32)bounds.min.z - radius; z < (s32)bounds.max.z + radius; ++z) {
+            for (s32 x = (s32)bounds.min.x - radius; x < (s32)bounds.max.x + radius; ++x) {
+                locs.emplace_back(x, y, z);
+            }
+        }
+    }
+
+    return locs;
+}
+
+void CollisionDetector::ResolveCollisions(PhysicsComponent* physics, double dt) {
+    const s32 MaxIterations = 10;
+    bool collisions = true;
+
+    Vector3d velocity = physics->GetVelocity();
+
+    for (s32 iteration = 0; iteration < MaxIterations && collisions; ++iteration) {
+        Vector3d position = physics->GetPosition();
+
+        collisions = false;
+
+        for (std::size_t i = 0; i < 3; ++i) {
+            AABB playerBounds = physics->GetBoundingBox();
+
+            if (iteration == 0)
+                position[i] += velocity[i] * dt;
+
+            playerBounds.min += position;
+            playerBounds.max += position;
+
+            std::vector<Vector3i> surrounding = GetSurroundingLocations(playerBounds);
+
+            for (Vector3i checkPos : surrounding) {
+                Minecraft::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
+
+                if (block && block->IsSolid()) {
+                    AABB blockBounds = block->GetBoundingBox(checkPos);
+
+                    if (playerBounds.Intersects(blockBounds)) {
+                        velocity[i] = 0;
+
+                        double penetrationDepth;
+
+                        if (playerBounds.min[i] < blockBounds.min[i]) {
+                            penetrationDepth = playerBounds.max[i] - blockBounds.min[i];
+                        } else {
+                            penetrationDepth = playerBounds.min[i] - blockBounds.max[i];
+                        }
+
+                        position[i] -= penetrationDepth;
+                        collisions = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        physics->SetPosition(position);
+    }
+    physics->SetVelocity(velocity);
 }

@@ -2,6 +2,7 @@
 #define MCBOT_PHYSICS_COMPONENT_H_
 
 #include <mclib/Vector.h>
+#include <mclib/AABB.h>
 #include "Component.h"
 #include "Collision.h"
 
@@ -11,6 +12,7 @@ public:
 
 private:
     CollisionDetector m_CollisionDetector;
+    AABB m_BoundingBox;
 
     Vector3d m_Position;
     Vector3d m_Velocity;
@@ -24,8 +26,8 @@ private:
     double m_MaxSpeed;
 
 public:
-    PhysicsComponent(Minecraft::World* world) 
-        : m_CollisionDetector(world), m_Orientation(0), m_MaxSpeed(1), m_MaxAcceleration(1), m_MaxRotation(3.14 * 2)
+    PhysicsComponent(Minecraft::World* world, AABB bounds)
+        : m_CollisionDetector(world), m_BoundingBox(bounds), m_Orientation(0), m_MaxSpeed(1), m_MaxAcceleration(1), m_MaxRotation(3.14 * 2)
     {
 
     }
@@ -38,7 +40,8 @@ public:
     double GetMaxSpeed() const { return m_MaxSpeed; }
     double GetMaxAcceleration() const { return m_MaxAcceleration; }
     double GetMaxRotation() const { return m_MaxRotation; }
-    
+    AABB GetBoundingBox() const { return m_BoundingBox; }
+
     void SetPosition(const Vector3d& pos) { m_Position = pos; }
     void SetVelocity(const Vector3d& velocity) { m_Velocity = velocity; }
     void ClearHorizontalVelocity() { m_Velocity = Vector3d(0, m_Velocity.y, 0); }

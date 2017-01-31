@@ -3,13 +3,11 @@
 #include "GameClient.h"
 #include "Utility.h"
 #include "PhysicsComponent.h"
+#include "Math.h"
+
 #include <iostream>
 
 std::shared_ptr<PhysicsComponent> WorldGraph::ChunkTaskComparator::physics = nullptr;
-
-Vector3d Hadamard(Vector3d first, Vector3d second) {
-    return Vector3d(first.x * second.x, first.y * second.y, first.z * second.z);
-}
 
 // Prioritize chunks whose y value is closest to the player's y value.
 bool WorldGraph::ChunkTaskComparator::operator()(Vector3i first, Vector3i second) {
