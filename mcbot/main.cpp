@@ -7,6 +7,7 @@
 
 const bool MysticEmpire = false;
 
+
 class Logger : public Minecraft::Packets::PacketHandler {
 public:
     Logger(Minecraft::Packets::PacketDispatcher* dispatcher)
