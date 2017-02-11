@@ -23,6 +23,12 @@ void PhysicsComponent::Integrate(double dt) {
     if (horizontalAcceleration.LengthSq() > m_MaxAcceleration * m_MaxAcceleration)
         horizontalAcceleration.Truncate(m_MaxAcceleration);
 
+    bool onGround = m_CollisionDetector.DetectCollision(m_Position, Vector3d(0, -32 * dt, 0), nullptr);
+    if (!onGround) {
+        // Move slower in the air
+        horizontalAcceleration *= .3;
+    }
+
     // Add gravity
     m_Acceleration = Vector3d(horizontalAcceleration.x, -32 + m_Acceleration.y, horizontalAcceleration.z);
 
