@@ -168,8 +168,10 @@ void Graph::Destroy() {
 
     m_Nodes.clear();
 
-    for (Edge* edge : m_Edges) {
-        delete edge;
+    for (auto kv : m_Edges) {
+        for (Edge* edge : kv.second)
+            delete edge;
+        kv.second.clear();
     }
 
     m_Edges.clear();
@@ -231,7 +233,7 @@ bool Graph::LinkNodes(Node* first, Node* second, float weight) {
     first->AddEdge(edge);
     second->AddEdge(edge);
 
-    m_Edges.push_back(edge);
+    m_Edges[edge->GetNode(0)->GetPosition()].push_back(edge);
     return true;
 }
 

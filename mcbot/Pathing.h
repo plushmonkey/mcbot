@@ -189,7 +189,8 @@ public:
 class Graph {
 protected:
     std::map<Vector3i, Node*> m_Nodes;
-    std::vector<Edge*> m_Edges;
+    // Store edges by position of first node for quick lookup
+    std::map<Vector3i, std::vector<Edge*>> m_Edges;
 
     bool LinkNodes(Node* first, Node* second, float weight = 1.0);
 public:

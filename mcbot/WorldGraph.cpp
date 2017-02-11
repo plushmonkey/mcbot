@@ -138,7 +138,7 @@ void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockState newBlock
         return processed.x == chunkPos.x && processed.z == chunkPos.z;
     });
     // Don't process block changes when the chunk hasn't been added to the graph yet.
-    if (iter == m_ProcessedChunks.end()) return;
+    //if (iter == m_ProcessedChunks.end()) return;
     
     // Get all of the nodes surrounding the changed position
     for (s32 y = -InvalidationRadius; y <= InvalidationRadius; ++y) {
@@ -158,12 +158,19 @@ void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockState newBlock
     for (ai::path::Node* node : nodes) {
         std::vector<ai::path::Edge*> edges = node->GetEdges();
         for (ai::path::Edge* edge : edges) {
+            Vector3i edgePos = edge->GetNode(0)->GetPosition();
             // Removes the edge from both the node and its connection
             node->RemoveEdge(edge);
 
-            auto iter = std::find(m_Edges.begin(), m_Edges.end(), edge);
-            if (iter != m_Edges.end())
-                m_Edges.erase(iter);
+            auto iter = m_Edges.find(edgePos);
+            if (iter != m_Edges.end()) {
+                auto& edgeList = iter->second;
+                auto edgeIter = std::find(edgeList.begin(), edgeList.end(), edge);
+
+                if (edgeIter != edgeList.end()) {
+                    m_Edges.erase(iter);
+                }
+            }
             delete edge;
         }
     }
