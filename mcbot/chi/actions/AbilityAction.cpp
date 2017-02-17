@@ -1,0 +1,249 @@
+#include "AbilityAction.h"
+#include "../../Pathfinder.h"
+#include "../../Utility.h"
+#include "../../components/PhysicsComponent.h"
+#include "../../components/TargetingComponent.h"
+
+bool BackstabAction::CanAttack() {
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    auto targeting = GetActorComponent(m_Client, TargetingComponent);
+
+    auto entity = m_Client->GetEntityManager()->GetEntity(targeting->GetTargetEntity());
+    if (!entity) return false;
+    double orientation = physics->GetOrientation();
+    float yaw = entity->GetYaw();
+
+    Vector3d botRot = util::OrientationToVector(orientation);
+    Vector3d tarRot = util::OrientationToVector(yaw);
+
+    if (botRot.Dot(tarRot) > 0)
+        return MeleeAction::CanAttack();
+    return false;
+}
+
+void SwiftKickAction::Attack(Minecraft::EntityPtr entity) {
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    Vector3d pos = physics->GetPosition();
+    Vector3d newPos = pos + Vector3d(0, 1.5, 0);
+    physics->SetPosition(newPos);
+
+    // Jump up one block before attacking so the bot is in the air for swift kick
+    Minecraft::Packets::Outbound::PlayerPositionAndLookPacket positionPacket(newPos,
+        (float)physics->GetOrientation() * 180.0f / 3.14159f, 0.0f, false);
+    m_Client->GetConnection()->SendPacket(&positionPacket);
+
+    MeleeAction::Attack(entity);
+}
+
+bool LungeAction::ShouldUse() {
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    auto targeting = GetActorComponent(m_Client, TargetingComponent);
+
+    auto entity = m_Client->GetEntityManager()->GetEntity(targeting->GetTargetEntity());
+    if (!entity) return false;
+
+    Vector3d target = entity->GetPosition();
+    Vector3d position = physics->GetPosition();
+    Vector3d direction = Vector3Normalize(target - position);
+
+    double dist = position.Distance(target);
+    if (dist < 12) return false;
+
+    CastResult result = RayCast(m_Client->GetWorld(), m_Client->GetGraph(), position, direction, dist);
+    if (result.full)
+        return MeleeAction::CanAttack();
+    return false;
+}
+
+void LungeAction::Attack(Minecraft::EntityPtr entity) {
+    using namespace Minecraft::Packets::Outbound;
+    AnimationPacket animationPacket(Minecraft::Hand::Main);
+    m_Client->GetConnection()->SendPacket(&animationPacket);
+}
+
+
+Vector3d JoinArenaAction::GetSignNormal() {
+    Minecraft::BlockState bState = m_Client->GetWorld()->GetBlock(m_SignPosition);
+    float angle = 0.0f;
+
+    if (bState.GetBlock()->GetName().compare(L"Standing Sign Block") == 0) {
+        u16 data = bState.GetData() & ((1 << 4) - 1);
+        const float startAngle = (3.0f / 2.0f * 3.14159f);
+        angle = startAngle - (2.0f * 3.14159f * data / 16.0f);
+    } else if (bState.GetBlock()->GetName().compare(L"Wall-mounted Sign Block") == 0) {
+        u16 data = bState.GetData() & ((1 << 4) - 1);
+        switch (data) {
+        case 2:
+            angle = 0.5f * 3.1415f;
+            break;
+        case 3:
+            angle = 3.0f / 2.0f * 3.1415f;
+            break;
+        case 4:
+            angle = 3.1415f;
+            break;
+        case 5:
+            angle = 0.0f;
+            break;
+        }
+    }
+
+    return Vector3d(std::cos(angle), 0, -std::sin(angle));
+}
+
+bool JoinArenaAction::FindSign() {
+    if (m_FoundSign) return true;
+
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    if (!physics) return false;
+
+    if (m_MysticEmpire) {
+        m_SignPosition = Vector3i(-16, 150, -49);
+        m_FoundSign = true;
+
+        const double StandAwayDistance = 1.5;
+
+        Vector3d normal = GetSignNormal();
+        Vector3i front = ToVector3i(ToVector3d(m_SignPosition) + normal * StandAwayDistance);
+        m_StandPosition = GetGroundLevel(m_Client->GetWorld(), front);
+        std::cout << "Found sign at " << m_SignPosition << " when bot at " << physics->GetPosition() << " StandPosition: " << m_StandPosition << std::endl;
+        return true;
+    } else {
+        std::vector<Minecraft::BlockEntityPtr> blockEntities = m_Client->GetWorld()->GetBlockEntities();
+
+        for (Minecraft::BlockEntityPtr blockEntity : blockEntities) {
+            if (blockEntity->GetType() != Minecraft::BlockEntityType::Sign) continue;
+
+            std::shared_ptr<Minecraft::SignBlockEntity> sign = std::static_pointer_cast<Minecraft::SignBlockEntity>(blockEntity);
+
+            for (std::size_t i = 0; i < 4; ++i) {
+                std::wstring text = sign->GetText(i);
+                std::transform(text.begin(), text.end(), text.begin(), towlower);
+
+                std::wcout << text << std::endl;
+
+                if (text.find(L"multi") != std::wstring::npos) {
+                    m_SignPosition = sign->GetPosition();
+                    m_FoundSign = true;
+
+                    const double StandAwayDistance = 1.0;
+
+                    Vector3d normal = GetSignNormal();
+                    Vector3i front = ToVector3i(ToVector3d(m_SignPosition) + normal * StandAwayDistance);
+                    m_StandPosition = GetGroundLevel(m_Client->GetWorld(), front);
+                    std::cout << "Found sign at " << m_SignPosition << " when bot at " << physics->GetPosition() << std::endl;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+}
+
+bool JoinArenaAction::IsNearSign() {
+    if (!FindSign()) return false;
+
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    if (!physics) return false;
+
+    Vector3d position = physics->GetPosition();
+    Vector3d toSign = ToVector3d(m_SignPosition) - position;
+    const double NearbyRangeSq = 25 * 25;
+
+    bool result = toSign.LengthSq() < NearbyRangeSq || (m_MysticEmpire && (s32)position.y == 149);
+
+    std::cout << "Position: " << position << std::endl;
+    return result;
+}
+
+void JoinArenaAction::Act() {
+    auto targeting = GetActorComponent(m_Client, TargetingComponent);
+    if (!targeting) return;
+
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    if (!physics) return;
+
+    targeting->SetTarget(m_StandPosition);
+    targeting->SetTargetEntity(-1);
+
+    ai::FaceSteering align(m_Client, ToVector3d(m_SignPosition), 0.1, 1, 1);
+    physics->ApplyRotation(align.GetSteering().rotation);
+
+    // Click on sign if nearby
+    Vector3d toSign = ToVector3d(m_SignPosition) - physics->GetPosition();
+    if (toSign.LengthSq() <= 4.0 * 4.0) {
+        physics->SetVelocity(Vector3d(0, 0, 0));
+        s64 time = util::GetTime();
+
+        if (time >= m_LastClick + 2000) {
+            using namespace Minecraft::Packets::Outbound;
+            std::cout << "Sending sign click" << std::endl;
+
+            PlayerBlockPlacementPacket packet(m_SignPosition, 4, Minecraft::Hand::Main, Vector3f(0.5f, 0.0f, 0.5f));
+            m_Client->GetConnection()->SendPacket(&packet);
+            m_LastClick = time;
+        }
+    }
+}
+
+void FindTargetAction::Act()  {
+    std::vector<Minecraft::PlayerPtr> players;
+
+    auto pm = m_Client->GetPlayerManager();
+    for (auto iter = pm->begin(); iter != pm->end(); ++iter)
+        players.push_back(iter->second);
+
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    if (!physics) return;
+
+    auto targeting = GetActorComponent(m_Client, TargetingComponent);
+    if (!targeting) return;
+
+    if (players.size() <= 1) {
+        targeting->SetTargetEntity(-1);
+        return;
+    }
+
+    double closestDist = std::numeric_limits<double>::max();
+    Minecraft::PlayerPtr closestPlayer;
+
+    Vector3d position = physics->GetPosition();
+
+    auto playerEntity = m_Client->GetEntityManager()->GetPlayerEntity();
+
+    for (Minecraft::PlayerPtr player : players) {
+        auto entity = player->GetEntity();
+        if (!entity || entity == playerEntity) continue;
+
+        Vector3d toEntity = entity->GetPosition() - position;
+        double distSq = toEntity.LengthSq();
+
+        if (distSq < closestDist) {
+            closestDist = distSq;
+            closestPlayer = player;
+        }
+    }
+
+    if (closestPlayer) {
+        if (targeting->GetTargetEntity() != closestPlayer->GetEntity()->GetEntityId())
+            std::wcout << L"Targeting " << closestPlayer->GetName() << std::endl;
+        targeting->SetTargetEntity(closestPlayer->GetEntity()->GetEntityId());
+        targeting->SetTarget(ToVector3i(closestPlayer->GetEntity()->GetPosition()));
+    }
+}
+
+double FindTargetAction::DistanceToTarget() {
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
+    if (!physics) return std::numeric_limits<double>::max();
+
+    auto targeting = GetActorComponent(m_Client, TargetingComponent);
+    if (!targeting) return std::numeric_limits<double>::max();;
+
+    Minecraft::PlayerPtr target = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
+    if (!target || !target->GetEntity()) return std::numeric_limits<double>::max();
+
+    Vector3d toTarget = target->GetEntity()->GetPosition() - physics->GetPosition();
+
+    return toTarget.Length();
+}

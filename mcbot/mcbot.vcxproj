@@ -117,6 +117,10 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="BotUpdate.cpp" />
+    <ClCompile Include="chi\actions\AbilityAction.cpp" />
+    <ClCompile Include="chi\actions\AttackAction.cpp" />
+    <ClCompile Include="chi\ChiBot.cpp" />
+    <ClCompile Include="chi\components\StuckComponent.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="components\JumpComponent.cpp" />
     <ClCompile Include="components\PhysicsComponent.cpp" />
@@ -137,6 +141,10 @@
     <ClInclude Include="actions\WanderAction.h" />
     <ClInclude Include="Actor.h" />
     <ClInclude Include="BotUpdate.h" />
+    <ClInclude Include="chi\actions\AbilityAction.h" />
+    <ClInclude Include="chi\actions\AttackAction.h" />
+    <ClInclude Include="chi\ChiBot.h" />
+    <ClInclude Include="chi\components\StuckComponent.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="components\JumpComponent.h" />

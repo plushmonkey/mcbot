@@ -1,7 +1,7 @@
 #ifndef MCBOT_STUCK_COMPONENT_H_
 #define MCBOT_STUCK_COMPONENT_H_
 
-#include "Component.h"
+#include "../../Component.h"
 #include <mclib/Common.h>
 #include <mclib/Packets/PacketHandler.h>
 #include <mclib/Packets/PacketDispatcher.h>

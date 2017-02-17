@@ -22,6 +22,24 @@
     <Filter Include="Header Files\actions">
       <UniqueIdentifier>{df0cff57-ca71-4b6a-a2b1-9e5d18c57a9f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\chi">
+      <UniqueIdentifier>{44efa09a-cd6d-486f-a2b9-19cd1c2e0b8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\chi\components">
+      <UniqueIdentifier>{8aa5f332-d09e-41ff-90be-57fb3e6c8e20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\chi\actions">
+      <UniqueIdentifier>{8373ff49-e84a-4eee-821a-3c53abcf45bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\chi">
+      <UniqueIdentifier>{66d0e42d-23b5-4388-ae15-8ff57b1efc7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\chi\components">
+      <UniqueIdentifier>{91751204-33fd-42e3-8184-05286f12b9e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\chi\actions">
+      <UniqueIdentifier>{ed7e22fb-08df-4c7f-bc16-3dbd7deda892}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -75,8 +93,17 @@
     <ClCompile Include="PlayerList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StuckComponent.cpp">
-      <Filter>Source Files\Components</Filter>
+    <ClCompile Include="chi\ChiBot.cpp">
+      <Filter>Source Files\chi</Filter>
+    </ClCompile>
+    <ClCompile Include="chi\actions\AttackAction.cpp">
+      <Filter>Source Files\chi\actions</Filter>
+    </ClCompile>
+    <ClCompile Include="chi\actions\AbilityAction.cpp">
+      <Filter>Source Files\chi\actions</Filter>
+    </ClCompile>
+    <ClCompile Include="chi\components\StuckComponent.cpp">
+      <Filter>Source Files\chi\components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +166,18 @@
     </ClInclude>
     <ClInclude Include="actions\WanderAction.h">
       <Filter>Header Files\actions</Filter>
+    </ClInclude>
+    <ClInclude Include="chi\actions\AbilityAction.h">
+      <Filter>Header Files\chi\actions</Filter>
+    </ClInclude>
+    <ClInclude Include="chi\actions\AttackAction.h">
+      <Filter>Header Files\chi\actions</Filter>
+    </ClInclude>
+    <ClInclude Include="chi\ChiBot.h">
+      <Filter>Header Files\chi</Filter>
+    </ClInclude>
+    <ClInclude Include="chi\components\StuckComponent.h">
+      <Filter>Header Files\chi\components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

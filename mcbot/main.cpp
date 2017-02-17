@@ -1,9 +1,5 @@
 #include "BotUpdate.h"
-#include "components/JumpComponent.h"
-#include "components/PhysicsComponent.h"
-#include "components/SpeedComponent.h"
-#include "components/TargetingComponent.h"
-#include "actions/WanderAction.h"
+#include "chi/ChiBot.h"
 
 const bool MysticEmpire = false;
 
@@ -32,9 +28,11 @@ int main(void) {
     Minecraft::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
     GameClient game;
     BotUpdate update(&game);
-
     Logger logger(game.GetDispatcher());
     
+    chi::ChiBot::RegisterComponents(&update);
+    chi::ChiBot::CreateDecisionTree(&update, MysticEmpire);
+
     if (MysticEmpire)
         game.login("play.mysticempire.net", 25565, "email", "password");
     else

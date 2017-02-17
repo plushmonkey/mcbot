@@ -1,8 +1,8 @@
 #include "StuckComponent.h"
-#include "PhysicsComponent.h"
-#include "Utility.h"
-#include "Actor.h"
-#include "Math.h"
+#include "../../components/PhysicsComponent.h"
+#include "../../Utility.h"
+#include "../../Actor.h"
+#include "../../Math.h"
 
 #include <iostream>
 #include <random>
