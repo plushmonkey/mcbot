@@ -1,8 +1,8 @@
 #include "SynchronizationComponent.h"
 
-#include "Actor.h"
+#include "../Actor.h"
 #include "PhysicsComponent.h"
-#include "GameClient.h"
+#include "../GameClient.h"
 #include <iostream>
 
 const char* SynchronizationComponent::name = "Synchronization";

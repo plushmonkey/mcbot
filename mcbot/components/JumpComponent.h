@@ -1,8 +1,8 @@
 #ifndef MCBOT_JUMP_COMPONENT_H_
 #define MCBOT_JUMP_COMPONENT_H_
 
-#include "Component.h"
-#include "Collision.h"
+#include "../Component.h"
+#include "../Collision.h"
 #include <mclib/World.h>
 
 class JumpComponent : public Component {

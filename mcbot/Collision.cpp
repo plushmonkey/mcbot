@@ -1,5 +1,5 @@
 #include "Collision.h"
-#include "PhysicsComponent.h"
+#include "components/PhysicsComponent.h"
 #include "Math.h"
 
 #include <iostream>

@@ -1,7 +1,7 @@
 #ifndef MCBOT_SYNCHRONIZATION_COMPONENT_H_
 #define MCBOT_SYNCHRONIZATION_COMPONENT_H_
 
-#include "Component.h"
+#include "../Component.h"
 
 #include <mclib/Connection.h>
 #include <mclib/Packets/PacketDispatcher.h>

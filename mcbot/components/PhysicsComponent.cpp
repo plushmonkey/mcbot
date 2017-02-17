@@ -1,7 +1,7 @@
 #include "PhysicsComponent.h"
 #include "JumpComponent.h"
-#include "Math.h"
-#include "Actor.h"
+#include "../Math.h"
+#include "../Actor.h"
 
 #include <iostream>
 #include <random>

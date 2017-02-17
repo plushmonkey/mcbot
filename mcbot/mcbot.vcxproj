@@ -116,35 +116,42 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="BotUpdate.cpp" />
     <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="components\JumpComponent.cpp" />
+    <ClCompile Include="components\PhysicsComponent.cpp" />
+    <ClCompile Include="components\SpeedComponent.cpp" />
+    <ClCompile Include="components\SynchronizationComponent.cpp" />
+    <ClCompile Include="components\TargetingComponent.cpp" />
     <ClCompile Include="GameClient.cpp" />
     <ClCompile Include="Inventory.cpp" />
-    <ClCompile Include="JumpComponent.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Pathfinder.cpp" />
     <ClCompile Include="Pathing.cpp" />
-    <ClCompile Include="PhysicsComponent.cpp" />
-    <ClCompile Include="SpeedComponent.cpp" />
+    <ClCompile Include="PlayerList.cpp" />
     <ClCompile Include="Steering.cpp" />
-    <ClCompile Include="SynchronizationComponent.cpp" />
-    <ClCompile Include="TargetingComponent.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="WorldGraph.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="actions\WanderAction.h" />
     <ClInclude Include="Actor.h" />
+    <ClInclude Include="BotUpdate.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="components\JumpComponent.h" />
+    <ClInclude Include="components\PhysicsComponent.h" />
+    <ClInclude Include="components\SpeedComponent.h" />
+    <ClInclude Include="components\SynchronizationComponent.h" />
+    <ClInclude Include="components\TargetingComponent.h" />
     <ClInclude Include="Decision.h" />
     <ClInclude Include="GameClient.h" />
     <ClInclude Include="Inventory.h" />
-    <ClInclude Include="JumpComponent.h" />
     <ClInclude Include="Math.h" />
+    <ClInclude Include="Pathfinder.h" />
     <ClInclude Include="Pathing.h" />
-    <ClInclude Include="PhysicsComponent.h" />
-    <ClInclude Include="SpeedComponent.h" />
+    <ClInclude Include="PlayerList.h" />
     <ClInclude Include="Steering.h" />
-    <ClInclude Include="SynchronizationComponent.h" />
-    <ClInclude Include="TargetingComponent.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="WorldGraph.h" />
   </ItemGroup>

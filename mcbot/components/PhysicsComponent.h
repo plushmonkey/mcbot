@@ -3,8 +3,8 @@
 
 #include <mclib/Vector.h>
 #include <mclib/AABB.h>
-#include "Component.h"
-#include "Collision.h"
+#include "../Component.h"
+#include "../Collision.h"
 
 class PhysicsComponent : public Component {
 public:

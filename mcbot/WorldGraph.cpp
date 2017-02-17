@@ -2,7 +2,7 @@
 
 #include "GameClient.h"
 #include "Utility.h"
-#include "PhysicsComponent.h"
+#include "components/PhysicsComponent.h"
 #include "Math.h"
 
 #include <iostream>

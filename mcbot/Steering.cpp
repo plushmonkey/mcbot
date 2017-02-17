@@ -1,6 +1,6 @@
 #include "Steering.h"
-#include "PhysicsComponent.h"
-#include "JumpComponent.h"
+#include "components/PhysicsComponent.h"
+#include "components/JumpComponent.h"
 #include "Utility.h"
 #include "Pathing.h"
 #include "Collision.h"

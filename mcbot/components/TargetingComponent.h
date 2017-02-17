@@ -1,8 +1,8 @@
 #ifndef MCBOT_TARGETING_COMPONENT_H_
 #define MCBOT_TARGETING_COMPONENT_H_
 
-#include "Component.h"
-#include "Collision.h"
+#include "../Component.h"
+#include "../Collision.h"
 
 class TargetingComponent : public Component {
 public:

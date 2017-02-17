@@ -1,8 +1,8 @@
 #include "JumpComponent.h"
 
-#include "Actor.h"
+#include "../Actor.h"
 #include "PhysicsComponent.h"
-#include "Utility.h"
+#include "../Utility.h"
 
 #include <iostream>
 

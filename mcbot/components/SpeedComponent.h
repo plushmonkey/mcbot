@@ -1,7 +1,7 @@
 #ifndef MCBOT_SPEED_COMPONENT_H_
 #define MCBOT_SPEED_COMPONENT_H_
 
-#include "Component.h"
+#include "../Component.h"
 
 #include <mclib/Connection.h>
 #include <mclib/World.h>

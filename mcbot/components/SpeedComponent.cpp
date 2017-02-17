@@ -1,8 +1,8 @@
 #include "SpeedComponent.h"
 
-#include "Actor.h"
+#include "../Actor.h"
 #include "PhysicsComponent.h"
-#include "GameClient.h"
+#include "../GameClient.h"
 
 const char* SpeedComponent::name = "Speed";
 

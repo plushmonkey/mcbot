@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <iostream>
+#include <functional>
 
 class DecisionAction;
 
