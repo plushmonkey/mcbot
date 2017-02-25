@@ -3,6 +3,7 @@
 #include "../../Utility.h"
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TargetingComponent.h"
+#include "../components/EffectComponent.h"
 
 bool BackstabAction::CanAttack() {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
@@ -49,7 +50,7 @@ bool LungeAction::ShouldUse() {
     double dist = position.Distance(target);
     if (dist < 12) return false;
 
-    CastResult result = RayCast(m_Client->GetWorld(), m_Client->GetGraph(), position, direction, dist);
+    CastResult result = RayCast(m_Client->GetWorld(), m_Client->GetGraph(), position, direction, (std::size_t)dist);
     if (result.full)
         return MeleeAction::CanAttack();
     return false;
@@ -61,6 +62,38 @@ void LungeAction::Attack(Minecraft::EntityPtr entity) {
     m_Client->GetConnection()->SendPacket(&animationPacket);
 }
 
+bool WarriorStanceAction::ShouldUse() {
+    auto effects = GetActorComponent(m_Client, EffectComponent);
+
+    bool hasStrength = effects->HasEffect(Effect::Strength);
+
+    if (hasStrength) {
+        m_ActivationTime = 0;
+        return false;
+    }
+
+    s64 time = util::GetTime();
+    if (m_ActivationTime > 0 && time >= m_ActivationTime) {
+        bool canAttack = MeleeAction::CanAttack();
+
+        if (canAttack) {
+            m_ActivationTime = 0;
+        }
+
+        return canAttack;
+    }
+    
+    if (m_ActivationTime == 0) {
+        m_ActivationTime = time + 1000;
+    }
+    return false;
+}
+
+void WarriorStanceAction::Attack(Minecraft::EntityPtr entity) {
+    using namespace Minecraft::Packets::Outbound;
+    AnimationPacket animationPacket(Minecraft::Hand::Main);
+    m_Client->GetConnection()->SendPacket(&animationPacket);
+}
 
 Vector3d JoinArenaAction::GetSignNormal() {
     Minecraft::BlockState bState = m_Client->GetWorld()->GetBlock(m_SignPosition);

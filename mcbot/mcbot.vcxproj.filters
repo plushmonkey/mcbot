@@ -105,6 +105,9 @@
     <ClCompile Include="chi\components\StuckComponent.cpp">
       <Filter>Source Files\chi\components</Filter>
     </ClCompile>
+    <ClCompile Include="chi\components\EffectComponent.cpp">
+      <Filter>Source Files\chi\components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameClient.h">
@@ -177,6 +180,9 @@
       <Filter>Header Files\chi</Filter>
     </ClInclude>
     <ClInclude Include="chi\components\StuckComponent.h">
+      <Filter>Header Files\chi\components</Filter>
+    </ClInclude>
+    <ClInclude Include="chi\components\EffectComponent.h">
       <Filter>Header Files\chi\components</Filter>
     </ClInclude>
   </ItemGroup>

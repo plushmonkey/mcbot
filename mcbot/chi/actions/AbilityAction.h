@@ -38,6 +38,22 @@ public:
     void Attack(Minecraft::EntityPtr entity) override;
 };
 
+class WarriorStanceAction : public MeleeAction {
+private:
+    s64 m_ActivationTime;
+
+public:
+    WarriorStanceAction(GameClient* client, s64 delay, s32 slot)
+        : MeleeAction(client, delay, slot), m_ActivationTime(0)
+    {
+
+    }
+
+    bool ShouldUse();
+
+    void Attack(Minecraft::EntityPtr entity) override;
+};
+
 class JoinArenaAction : public DecisionAction {
 private:
     GameClient* m_Client;

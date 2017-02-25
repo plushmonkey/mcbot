@@ -6,6 +6,7 @@
 #include "../components/JumpComponent.h"
 #include "../components/TargetingComponent.h"
 #include "components/StuckComponent.h"
+#include "components/EffectComponent.h"
 #include "actions/AbilityAction.h"
 #include "actions/AttackAction.h"
 #include "../actions/WanderAction.h"
@@ -23,6 +24,9 @@ void ChiBot::RegisterComponents(BotUpdate* update) {
 
     auto stuck = std::make_shared<StuckComponent>(client->GetDispatcher(), Vector3d(100, 0, 100), 5);
     update->AddComponent(stuck);
+
+    auto effect = std::make_shared<EffectComponent>(client->GetDispatcher());
+    update->AddComponent(effect);
 }
 
 void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
@@ -38,6 +42,7 @@ void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
     auto rapidpunch = std::make_shared<MeleeAction>(client, 6100, 4);
     //auto daggerthrow = std::make_shared<MeleeAction>(client, 0, 5);
     auto swiftkick = std::make_shared<SwiftKickAction>(client, 4100, 6);
+    auto warrior = std::make_shared<WarriorStanceAction>(client, 1103, 7);
 
     auto quickstrikeDecision = std::make_shared<BooleanDecision>(
         quickstrike, findTarget, std::bind(&MeleeAction::CanAttack, quickstrike)
@@ -63,8 +68,12 @@ void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
         paralyzeDecision, lungeDecision, std::bind(&FindTargetAction::DistanceToTarget, findTarget), 0.0, 3
     );
 
+    auto warriorDecision = std::make_shared<BooleanDecision>(
+        warrior, meleeDecision, std::bind(&WarriorStanceAction::ShouldUse, warrior)
+    );
+
     DecisionTreeNodePtr decisionTree = std::make_shared<BooleanDecision>(
-        joinArenaAction, meleeDecision, std::bind(&JoinArenaAction::IsNearSign, joinArenaAction.get())
+        joinArenaAction, warriorDecision, std::bind(&JoinArenaAction::IsNearSign, joinArenaAction.get())
     );
 
     update->SetDecisionTree(decisionTree);
