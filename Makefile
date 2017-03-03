@@ -3,7 +3,7 @@ LIBS=-L. -ljsoncpp -lmc
 CXX=clang++
 BIN=bin
 
-SRC=$(wildcard mcbot/*.cpp mcbot/*/*.cpp)
+SRC=$(shell find mcbot -type f -name *.cpp)
 
 bot: $(SRC:.cpp=.o) libmc.so
 	$(CXX) -o $(BIN)/$@ $(CXXFLAGS) $^ -Wl,-rpath,. $(LIBS)
