@@ -2,6 +2,9 @@
 
 #include <mclib/Packets/PacketDispatcher.h>
 
+const s32 Inventory::HOTBAR_SLOT_START = 36;
+const s32 Inventory::PLAYER_INVENTORY_ID = 0;
+
 Inventory::Inventory(Minecraft::Connection* connection, int windowId)
     : m_WindowId(windowId),
       m_Connection(connection),

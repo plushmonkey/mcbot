@@ -6,3 +6,6 @@ Debug-Fast
 *.suo
 *.vsp
 *.psess
+bin
+*.so
+*.o

@@ -7,8 +7,8 @@
 
 class Inventory {
 public:
-    static const s32 HOTBAR_SLOT_START = 36;
-    static const s32 PLAYER_INVENTORY_ID = 0;
+    static const s32 HOTBAR_SLOT_START;
+    static const s32 PLAYER_INVENTORY_ID;
 
 private:
     Minecraft::Connection* m_Connection;
