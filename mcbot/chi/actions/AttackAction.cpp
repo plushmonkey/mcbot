@@ -66,24 +66,24 @@ void AttackAction::Act() {
         }
     }
 
-    std::wcout << L"Attacking " << targetPlayer->GetName() << " with slot " << m_Slot << std::endl;
-    Attack(entity);
-
-    s_LastGlobalAttack = util::GetTime();
-    m_LastAttack = util::GetTime();
+    if (Attack(entity)) {
+        std::wcout << L"Attacking " << targetPlayer->GetName() << " with slot " << m_Slot << std::endl;
+        s_LastGlobalAttack = util::GetTime();
+        m_LastAttack = util::GetTime();
+    }
 }
 
 s64 AttackAction::s_LastGlobalAttack = 0;
 s64 AttackAction::s_GlobalAttackCooldown = 600;
 
 
-void MeleeAction::Attack(Minecraft::EntityPtr entity) {
+bool MeleeAction::Attack(Minecraft::EntityPtr entity) {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
 
     Vector3d botPos = physics->GetPosition();
     Vector3d targetPos = entity->GetPosition();
 
-    if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
+    if ((targetPos - botPos).LengthSq() > AttackRangeSq) return false;
 
     using namespace Minecraft::Packets::Outbound;
 
@@ -94,4 +94,6 @@ void MeleeAction::Attack(Minecraft::EntityPtr entity) {
     // Send arm swing
     AnimationPacket animationPacket(Minecraft::Hand::Main);
     m_Client->GetConnection()->SendPacket(&animationPacket);
+
+    return true;
 }

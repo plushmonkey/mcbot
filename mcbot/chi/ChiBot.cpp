@@ -42,7 +42,8 @@ void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
     auto rapidpunch = std::make_shared<MeleeAction>(client, 6100, 4);
     //auto daggerthrow = std::make_shared<MeleeAction>(client, 0, 5);
     auto swiftkick = std::make_shared<SwiftKickAction>(client, 4100, 6);
-    auto warrior = std::make_shared<WarriorStanceAction>(client, 1103, 7);
+    auto warrior = std::make_shared<StanceAction>(client, 1000, 7, Effect::Resistance, -1);
+    auto acrobat = std::make_shared<StanceAction>(client, 1000, 8, Effect::Speed, 2);
 
     auto quickstrikeDecision = std::make_shared<BooleanDecision>(
         quickstrike, findTarget, std::bind(&MeleeAction::CanAttack, quickstrike)
@@ -69,11 +70,19 @@ void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
     );
 
     auto warriorDecision = std::make_shared<BooleanDecision>(
-        warrior, meleeDecision, std::bind(&WarriorStanceAction::ShouldUse, warrior)
+        warrior, meleeDecision, std::bind(&StanceAction::ShouldUse, warrior)
+    );
+
+    auto acroDecision = std::make_shared<BooleanDecision>(
+        acrobat, meleeDecision, std::bind(&StanceAction::ShouldUse, acrobat)
+    );
+
+    auto stanceDecision = std::make_shared<RangeDecision<double>>(
+        warriorDecision, acroDecision, std::bind(&FindTargetAction::DistanceToTarget, findTarget), 0.0, 9
     );
 
     DecisionTreeNodePtr decisionTree = std::make_shared<BooleanDecision>(
-        joinArenaAction, warriorDecision, std::bind(&JoinArenaAction::IsNearSign, joinArenaAction.get())
+        joinArenaAction, stanceDecision, std::bind(&JoinArenaAction::IsNearSign, joinArenaAction.get())
     );
 
     update->SetDecisionTree(decisionTree);

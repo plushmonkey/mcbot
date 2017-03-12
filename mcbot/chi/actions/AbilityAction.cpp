@@ -22,7 +22,7 @@ bool BackstabAction::CanAttack() {
     return false;
 }
 
-void SwiftKickAction::Attack(Minecraft::EntityPtr entity) {
+bool SwiftKickAction::Attack(Minecraft::EntityPtr entity) {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
     Vector3d pos = physics->GetPosition();
     Vector3d newPos = pos + Vector3d(0, 1.5, 0);
@@ -33,7 +33,7 @@ void SwiftKickAction::Attack(Minecraft::EntityPtr entity) {
         (float)physics->GetOrientation() * 180.0f / 3.14159f, 0.0f, false);
     m_Client->GetConnection()->SendPacket(&positionPacket);
 
-    MeleeAction::Attack(entity);
+    return MeleeAction::Attack(entity);
 }
 
 bool LungeAction::ShouldUse() {
@@ -56,43 +56,48 @@ bool LungeAction::ShouldUse() {
     return false;
 }
 
-void LungeAction::Attack(Minecraft::EntityPtr entity) {
+bool LungeAction::Attack(Minecraft::EntityPtr entity) {
     using namespace Minecraft::Packets::Outbound;
     AnimationPacket animationPacket(Minecraft::Hand::Main);
     m_Client->GetConnection()->SendPacket(&animationPacket);
+    return true;
 }
 
-bool WarriorStanceAction::ShouldUse() {
+bool StanceAction::ShouldUse() {
     auto effects = GetActorComponent(m_Client, EffectComponent);
 
-    bool hasStrength = effects->HasEffect(Effect::Strength);
+    const EffectComponent::EffectData* data = effects->GetEffectData(m_CheckEffect);
+    bool hasEffect = data && data->amplifier >= m_EffectLevel;
 
-    if (hasStrength) {
+    if (hasEffect) {
         m_ActivationTime = 0;
         return false;
     }
 
     s64 time = util::GetTime();
-    if (m_ActivationTime > 0 && time >= m_ActivationTime) {
-        bool canAttack = MeleeAction::CanAttack();
-
-        if (canAttack) {
-            m_ActivationTime = 0;
-        }
-
-        return canAttack;
-    }
     
     if (m_ActivationTime == 0) {
         m_ActivationTime = time + 1000;
     }
-    return false;
+    return true;
 }
 
-void WarriorStanceAction::Attack(Minecraft::EntityPtr entity) {
+bool StanceAction::Attack(Minecraft::EntityPtr entity) {
     using namespace Minecraft::Packets::Outbound;
-    AnimationPacket animationPacket(Minecraft::Hand::Main);
-    m_Client->GetConnection()->SendPacket(&animationPacket);
+
+    s64 time = util::GetTime();
+
+    bool canAttack = MeleeAction::CanAttack() && time >= m_ActivationTime;
+
+    
+    if (canAttack) {
+        m_ActivationTime = 0;
+
+        AnimationPacket animationPacket(Minecraft::Hand::Main);
+        m_Client->GetConnection()->SendPacket(&animationPacket);
+    }
+
+    return canAttack;
 }
 
 Vector3d JoinArenaAction::GetSignNormal() {
@@ -267,6 +272,8 @@ void FindTargetAction::Act()  {
 }
 
 double FindTargetAction::DistanceToTarget() {
+    Act();
+
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
     if (!physics) return std::numeric_limits<double>::max();
 

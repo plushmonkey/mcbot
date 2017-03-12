@@ -2,6 +2,7 @@
 #define MCBOT_CHI_ACTIONS_ABILITYACTION_H_
 
 #include "AttackAction.h"
+#include "../../components/EffectComponent.h"
 
 class BackstabAction : public MeleeAction {
 public:
@@ -22,7 +23,7 @@ public:
 
     }
 
-    void Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(Minecraft::EntityPtr entity) override;
 };
 
 class LungeAction : public MeleeAction {
@@ -35,23 +36,28 @@ public:
 
     bool ShouldUse();
 
-    void Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(Minecraft::EntityPtr entity) override;
 };
 
-class WarriorStanceAction : public MeleeAction {
+class StanceAction : public MeleeAction {
 private:
     s64 m_ActivationTime;
+    Effect m_CheckEffect;
+    int m_EffectLevel;
 
 public:
-    WarriorStanceAction(GameClient* client, s64 delay, s32 slot)
-        : MeleeAction(client, delay, slot), m_ActivationTime(0)
+    StanceAction(GameClient* client, s64 delay, s32 slot, Effect checkEffect, int effectLevel)
+        : MeleeAction(client, delay, slot), 
+          m_ActivationTime(0),
+          m_CheckEffect(checkEffect),
+          m_EffectLevel(effectLevel)
     {
 
     }
 
     bool ShouldUse();
 
-    void Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(Minecraft::EntityPtr entity) override;
 };
 
 class JoinArenaAction : public DecisionAction {
