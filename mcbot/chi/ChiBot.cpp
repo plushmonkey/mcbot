@@ -6,7 +6,7 @@
 #include "../components/JumpComponent.h"
 #include "../components/TargetingComponent.h"
 #include "components/StuckComponent.h"
-#include "components/EffectComponent.h"
+#include "../components/EffectComponent.h"
 #include "actions/AbilityAction.h"
 #include "actions/AttackAction.h"
 #include "../actions/WanderAction.h"

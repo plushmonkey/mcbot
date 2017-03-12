@@ -3,7 +3,7 @@
 #include "../../Utility.h"
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TargetingComponent.h"
-#include "../components/EffectComponent.h"
+#include "../../components/EffectComponent.h"
 
 bool BackstabAction::CanAttack() {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);

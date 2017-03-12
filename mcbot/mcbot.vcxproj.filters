@@ -105,8 +105,8 @@
     <ClCompile Include="chi\components\StuckComponent.cpp">
       <Filter>Source Files\chi\components</Filter>
     </ClCompile>
-    <ClCompile Include="chi\components\EffectComponent.cpp">
-      <Filter>Source Files\chi\components</Filter>
+    <ClCompile Include="components\EffectComponent.cpp">
+      <Filter>Source Files\components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,8 +182,8 @@
     <ClInclude Include="chi\components\StuckComponent.h">
       <Filter>Header Files\chi\components</Filter>
     </ClInclude>
-    <ClInclude Include="chi\components\EffectComponent.h">
-      <Filter>Header Files\chi\components</Filter>
+    <ClInclude Include="components\EffectComponent.h">
+      <Filter>Header Files\components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

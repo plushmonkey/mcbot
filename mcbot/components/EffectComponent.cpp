@@ -1,5 +1,5 @@
 #include "EffectComponent.h"
-#include "../../GameClient.h"
+#include "../GameClient.h"
 #include <iostream>
 
 const char* EffectComponent::name = "Effect";
@@ -47,5 +47,7 @@ bool EffectComponent::HasEffect(Effect effect) const {
 }
 
 const EffectComponent::EffectData* EffectComponent::GetEffectData(Effect effect) const {
-    return &m_Effects.at(effect);
+    auto iter = m_Effects.find(effect);
+    if (iter == m_Effects.end()) return nullptr;
+    return &iter->second;
 }
