@@ -1,4 +1,5 @@
 #include "BotUpdate.h"
+#include "components/EffectComponent.h"
 #include "components/JumpComponent.h"
 #include "components/PhysicsComponent.h"
 #include "components/SpeedComponent.h"
@@ -148,6 +149,9 @@ void CreateBot(BotUpdate* update) {
     auto speed = std::make_shared<SpeedComponent>(client->GetConnection(), client->GetWorld());
     speed->SetMovementType(SpeedComponent::Movement::Normal);
     update->AddComponent(speed);
+
+    auto effectComponent = std::make_shared<EffectComponent>(client->GetDispatcher());
+    update->AddComponent(effectComponent);
 
     auto jump = std::make_shared<JumpComponent>(client->GetWorld(), 200);
     update->AddComponent(jump);

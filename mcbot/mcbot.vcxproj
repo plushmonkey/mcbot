@@ -118,6 +118,7 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="BotUpdate.cpp" />
     <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="components\EffectComponent.cpp" />
     <ClCompile Include="components\JumpComponent.cpp" />
     <ClCompile Include="components\PhysicsComponent.cpp" />
     <ClCompile Include="components\SpeedComponent.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="BotUpdate.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="components\EffectComponent.h" />
     <ClInclude Include="components\JumpComponent.h" />
     <ClInclude Include="components\PhysicsComponent.h" />
     <ClInclude Include="components\SpeedComponent.h" />

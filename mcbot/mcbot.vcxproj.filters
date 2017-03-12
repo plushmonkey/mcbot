@@ -75,6 +75,9 @@
     <ClCompile Include="PlayerList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="components\EffectComponent.cpp">
+      <Filter>Source Files\components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameClient.h">
@@ -136,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="actions\WanderAction.h">
       <Filter>Header Files\actions</Filter>
+    </ClInclude>
+    <ClInclude Include="components\EffectComponent.h">
+      <Filter>Header Files\components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
