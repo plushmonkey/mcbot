@@ -2,9 +2,12 @@
 
 #include "../Actor.h"
 #include "PhysicsComponent.h"
+#include "EffectComponent.h"
 #include "../GameClient.h"
 
 const char* SpeedComponent::name = "Speed";
+
+#undef max
 
 namespace {
 
@@ -29,6 +32,8 @@ void SpeedComponent::Update(double dt) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (physics == nullptr) return;
 
+    auto effectComponent = GetActorComponent(m_Owner, EffectComponent);
+
     Vector3d pos = physics->GetPosition();
 
     if (IsWater(m_World, pos)) {
@@ -40,17 +45,41 @@ void SpeedComponent::Update(double dt) {
         return;
     }
 
+    float maxSpeed = WalkingSpeed;
+
     switch (m_Movement) {
         case Movement::Normal:
-            physics->SetMaxSpeed(WalkingSpeed);
+            maxSpeed = WalkingSpeed;
         break;
         case Movement::Sneaking:
-            physics->SetMaxSpeed(SneakingSpeed);
+            maxSpeed = SneakingSpeed;
         break;
         case Movement::Sprinting:
-            physics->SetMaxSpeed(SprintingSpeed);
+            maxSpeed = SprintingSpeed;
         break;
-    }    
+    }
+
+    if (effectComponent) {
+        {
+            const EffectComponent::EffectData* edata = effectComponent->GetEffectData(Effect::Speed);
+            if (edata) {
+                s8 level = (s8)edata->amplifier;
+                maxSpeed *= (1.0f + (level + 1) * 0.2f);
+            }
+        }
+        maxSpeed = std::max(0.0f, maxSpeed);
+
+        {
+            const EffectComponent::EffectData* edata = effectComponent->GetEffectData(Effect::Slowness);
+            if (edata) {
+                s8 level = (s8)edata->amplifier;
+                maxSpeed *= (1.0f - (level + 1) * 0.15f);
+            }
+        }
+        maxSpeed = std::max(0.0f, maxSpeed);
+    }
+
+    physics->SetMaxSpeed(maxSpeed);
 }
 
 void SpeedComponent::SetMovementType(Movement movement) {
