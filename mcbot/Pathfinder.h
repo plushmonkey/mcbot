@@ -20,7 +20,7 @@ CastResult RayCast(Minecraft::World* world, std::shared_ptr<WorldGraph> graph, c
 class Pathfinder {
 private:
     GameClient* m_Client;
-    ai::path::Plan* m_Plan;
+    std::shared_ptr<ai::path::Plan> m_Plan;
     CollisionDetector m_CollisionDetector;
 
     bool IsNearBlocks(Vector3d pos);

@@ -75,7 +75,14 @@ PlanningNode::PlanningNode(PlanningNode* prev, Node* node, Node* goal)
     SetPrevious(prev);
 }
 
-Plan* AStar::operator()(Node* start, Node* goal) {
+AStar::~AStar() {
+    for (auto& pair : m_NodeMap) {
+        delete pair.second;
+    }
+    m_NodeMap.clear();
+}
+
+std::shared_ptr<Plan> AStar::operator()(Node* start, Node* goal) {
     if (start == goal) return nullptr;
 
     m_Goal = goal;
@@ -123,8 +130,8 @@ Plan* AStar::operator()(Node* start, Node* goal) {
     return nullptr;
 }
 
-Plan* AStar::BuildPath(PlanningNode* goal) {
-    Plan* plan = new Plan();
+std::shared_ptr<Plan> AStar::BuildPath(PlanningNode* goal) {
+    std::shared_ptr<Plan> plan = std::make_shared<Plan>();
     std::vector<PlanningNode*> path;
     path.reserve(64);
     PlanningNode* node = goal;
@@ -206,7 +213,7 @@ Node* Graph::FindClosest(const Vector3i& pos) const {
     return nullptr;
 }
 
-Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) const {
+std::shared_ptr<Plan> Graph::FindPath(const Vector3i& start, const Vector3i& end) const {
     Node* startNode = FindClosest(start);
     Node* endNode = FindClosest(end);
 
@@ -214,7 +221,7 @@ Plan* Graph::FindPath(const Vector3i& start, const Vector3i& end) const {
 
     AStar algorithm;
 
-    Plan* plan = algorithm(startNode, endNode);
+    std::shared_ptr<Plan> plan = algorithm(startNode, endNode);
 
     if (plan)
         plan->Reset();

@@ -146,10 +146,6 @@ public:
 void CreateBot(BotUpdate* update) {
     GameClient* client = update->GetClient();
 
-    auto speed = std::make_shared<SpeedComponent>(client->GetConnection(), client->GetWorld());
-    speed->SetMovementType(SpeedComponent::Movement::Normal);
-    update->AddComponent(speed);
-
     auto effectComponent = std::make_shared<EffectComponent>(client->GetDispatcher());
     update->AddComponent(effectComponent);
 
@@ -173,6 +169,14 @@ void CreateBot(BotUpdate* update) {
     update->SetDecisionTree(tree);
 }
 
+void CleanupBot(BotUpdate* update) {
+    GameClient* client = update->GetClient();
+
+    client->RemoveComponent(Component::GetIdFromName(EffectComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(JumpComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(TargetingComponent::name));
+}
+
 int main(void) {
     Minecraft::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
     GameClient game;
@@ -184,5 +188,6 @@ int main(void) {
     
     game.run();
 
+    CleanupBot(&update);
     return 0;
 }
