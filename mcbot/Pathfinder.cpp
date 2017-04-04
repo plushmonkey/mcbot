@@ -140,7 +140,7 @@ void Pathfinder::Update() {
     Vector3d position = physics->GetPosition();
     Vector3d alignTarget = ToVector3d(target);
 
-    ai::PathFollowSteering path(m_Client, m_Plan, 0.25);
+    ai::PathFollowSteering path(m_Client, m_Plan.get(), 0.25);
     ai::SteeringAcceleration pathSteering = path.GetSteering();
     physics->ApplyAcceleration(pathSteering.movement);
     physics->ApplyRotation(pathSteering.rotation);

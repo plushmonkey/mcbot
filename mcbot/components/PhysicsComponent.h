@@ -27,7 +27,12 @@ private:
 
 public:
     PhysicsComponent(Minecraft::World* world, AABB bounds)
-        : m_CollisionDetector(world), m_BoundingBox(bounds), m_Orientation(0), m_MaxSpeed(1), m_MaxAcceleration(1), m_MaxRotation(3.14 * 2)
+        : m_CollisionDetector(world), 
+          m_BoundingBox(bounds),
+          m_Position(), m_Velocity(),
+          m_Orientation(0), 
+          m_Acceleration(), m_Rotation(0),
+          m_MaxAcceleration(1), m_MaxRotation(3.14 * 2), m_MaxSpeed(1)
     {
 
     }

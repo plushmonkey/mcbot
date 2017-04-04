@@ -179,10 +179,12 @@ private:
     PlanningNode* AddToOpenSet(Node* node, PlanningNode* prev);
 
     // Backtrace path and reverse it to get finished plan
-    Plan* BuildPath(PlanningNode* goal);
+    std::shared_ptr<Plan> BuildPath(PlanningNode* goal);
 
 public:
-    Plan* operator()(Node* start, Node* goal);
+    ~AStar();
+
+    std::shared_ptr<Plan> operator()(Node* start, Node* goal);
 };
 
 // Extend this and fill out nodes/edges with world data
@@ -194,10 +196,10 @@ protected:
 
     bool LinkNodes(Node* first, Node* second, float weight = 1.0);
 public:
-    ~Graph();
+    virtual ~Graph();
 
     Node* FindClosest(const Vector3i& pos) const;
-    Plan* FindPath(const Vector3i& start, const Vector3i& end) const;
+    std::shared_ptr<Plan> FindPath(const Vector3i& start, const Vector3i& end) const;
 
     void Destroy();
 };
