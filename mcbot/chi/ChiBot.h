@@ -10,6 +10,8 @@ class ChiBot {
 public:
     static void CreateDecisionTree(BotUpdate* update, bool mystic = false);
     static void RegisterComponents(BotUpdate* update);
+
+    static void Cleanup(BotUpdate* update);
 };
 
 }

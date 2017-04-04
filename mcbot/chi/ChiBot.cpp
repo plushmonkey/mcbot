@@ -87,3 +87,12 @@ void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {
 
     update->SetDecisionTree(decisionTree);
 }
+
+void ChiBot::Cleanup(BotUpdate* update) {
+    GameClient* client = update->GetClient();
+
+    client->RemoveComponent(Component::GetIdFromName(JumpComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(TargetingComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(StuckComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(EffectComponent::name));
+}

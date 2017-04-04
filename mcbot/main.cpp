@@ -60,5 +60,6 @@ int main(void) {
     
     game.run();
 
+    chi::ChiBot::Cleanup(&update);
     return 0;
 }
