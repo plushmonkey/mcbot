@@ -3,6 +3,9 @@
 #include "Utility.h"
 #include <iostream>
 
+using mc::Vector3d;
+using mc::Vector3i;
+
 namespace ai {
 namespace path {
 

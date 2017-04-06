@@ -1,9 +1,9 @@
 #ifndef MCBOT_STEERING_H_
 #define MCBOT_STEERING_H_
 
-#include <mclib/Vector.h>
-#include <mclib/Utility.h>
-#include <mclib/Entity/Entity.h>
+#include <mclib/common/Vector.h>
+#include <mclib/util/Utility.h>
+#include <mclib/entity/Entity.h>
 #include "Actor.h"
 
 class CollisionDetector;
@@ -11,7 +11,7 @@ class CollisionDetector;
 namespace ai {
 
 struct SteeringAcceleration {
-    Vector3d movement;
+    mc::Vector3d movement;
     double rotation;
 
     SteeringAcceleration() : rotation(0) { }
@@ -25,10 +25,10 @@ public:
 class SeekSteering : public SteeringBehavior {
 protected:
     Actor* m_Player;
-    Vector3d m_Target;
+    mc::Vector3d m_Target;
 
 public:
-    SeekSteering(Actor* player, Vector3d target) 
+    SeekSteering(Actor* player, mc::Vector3d target)
         : m_Player(player), m_Target(target)
     {
     }
@@ -39,10 +39,10 @@ public:
 class FleeSteering : public SteeringBehavior {
 protected:
     Actor* m_Player;
-    Vector3d m_Target;
+    mc::Vector3d m_Target;
 
 public:
-    FleeSteering(Actor* player, Vector3d target)
+    FleeSteering(Actor* player, mc::Vector3d target)
         : m_Player(player), m_Target(target)
     {
     }
@@ -53,7 +53,7 @@ public:
 class ArriveSteering : public SteeringBehavior {
 protected:
     Actor* m_Player;
-    Vector3d m_Target;
+    mc::Vector3d m_Target;
 
     // Consider the player to have arrived if within this radius
     double m_TargetRadius;
@@ -63,7 +63,7 @@ protected:
     double m_TimeToTarget;
 
 public:
-    ArriveSteering(Actor* player, Vector3d target, double targetRadius, double slowRadius, double timeToTarget)
+    ArriveSteering(Actor* player, mc::Vector3d target, double targetRadius, double slowRadius, double timeToTarget)
         : m_Player(player), m_Target(target), m_TargetRadius(targetRadius), m_SlowRadius(slowRadius), m_TimeToTarget(timeToTarget)
     {
 
@@ -94,11 +94,11 @@ public:
 class PursueSteering : public SeekSteering {
 private:
     double m_MaxPrediction;
-    Vector3d m_PursueTarget;
-    Vector3d m_TargetVelocity;
+    mc::Vector3d m_PursueTarget;
+    mc::Vector3d m_TargetVelocity;
 
 public:
-    PursueSteering(Actor* player, double maxPrediction, Vector3d target, Vector3d targetVelocity)
+    PursueSteering(Actor* player, double maxPrediction, mc::Vector3d target, mc::Vector3d targetVelocity)
         : SeekSteering(player, target),
           m_MaxPrediction(maxPrediction), m_PursueTarget(target), m_TargetVelocity(targetVelocity)
     {
@@ -110,10 +110,10 @@ public:
 
 class FaceSteering : public AlignSteering {
 protected:
-    Vector3d m_Target;
+    mc::Vector3d m_Target;
 
 public:
-    FaceSteering(Actor* player, Vector3d target, double targetRadius, double slowRadius, double timeToTarget)
+    FaceSteering(Actor* player, mc::Vector3d target, double targetRadius, double slowRadius, double timeToTarget)
         : AlignSteering(player, 0, targetRadius, slowRadius, timeToTarget), m_Target(target) { }
 
     SteeringAcceleration GetSteering();
@@ -136,7 +136,7 @@ private:
 
 public:
     WanderSteering(Actor* player, double offset, double radius, double rate)
-        : FaceSteering(player, Vector3d(), 0.1, 1, 1),
+        : FaceSteering(player, mc::Vector3d(), 0.1, 1, 1),
           m_WanderOffset(offset), m_WanderRadius(radius), m_WanderRate(rate), m_WanderOrientation(0)
     {
 
@@ -157,7 +157,7 @@ private:
 
 public:
     PathFollowSteering(Actor* player, path::Plan* plan, double offset)
-        : SeekSteering(player, Vector3d()),
+        : SeekSteering(player, mc::Vector3d()),
         m_Plan(plan), m_PathOffset(offset), m_PlanPos(0)
     {
 
@@ -173,11 +173,11 @@ private:
     CollisionDetector* m_CollisionDetector;
     double m_AvoidDistance;
     double m_RayLength;
-    Vector3d m_SmoothedVelocity;
+    mc::Vector3d m_SmoothedVelocity;
 
 public:
-    ObstacleAvoidSteering(Actor* player, Vector3d smoothedVelocity, CollisionDetector* detector, double avoidDistance, double lookAhead)
-        : SeekSteering(player, Vector3d()),
+    ObstacleAvoidSteering(Actor* player, mc::Vector3d smoothedVelocity, CollisionDetector* detector, double avoidDistance, double lookAhead)
+        : SeekSteering(player, mc::Vector3d()),
           m_CollisionDetector(detector), m_AvoidDistance(avoidDistance), m_RayLength(lookAhead)
     {
 

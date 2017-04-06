@@ -3,25 +3,25 @@
 
 #include "../Component.h"
 
-#include <mclib/Connection.h>
-#include <mclib/Packets/PacketDispatcher.h>
-#include <mclib/PlayerManager.h>
+#include <mclib/core/Connection.h>
+#include <mclib/protocol/packets/PacketDispatcher.h>
+#include <mclib/core/PlayerManager.h>
 
 // Keeps the server and client synchronized
-class SynchronizationComponent : public Component, public Minecraft::PlayerListener, public Minecraft::Packets::PacketHandler {
+class SynchronizationComponent : public Component, public mc::core::PlayerListener, public mc::protocol::packets::PacketHandler {
 public:
     static const char* name;
 
 private:
-    Minecraft::Connection* m_Connection;
-    Minecraft::PlayerManager* m_PlayerManager;
-    Vector3i m_SpawnPosition;
+    mc::core::Connection* m_Connection;
+    mc::core::PlayerManager* m_PlayerManager;
+    mc::Vector3i m_SpawnPosition;
     bool m_Spawned;
     bool m_Dead;
     
 public:
-    SynchronizationComponent(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection, Minecraft::PlayerManager* playerManager) 
-        : Minecraft::Packets::PacketHandler(dispatcher), 
+    SynchronizationComponent(mc::protocol::packets::PacketDispatcher* dispatcher, mc::core::Connection* connection, mc::core::PlayerManager* playerManager) 
+        : mc::protocol::packets::PacketHandler(dispatcher), 
           m_Connection(connection),
           m_PlayerManager(playerManager), 
           m_Spawned(false),
@@ -29,9 +29,9 @@ public:
     {
         m_PlayerManager->RegisterListener(this);
 
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::UpdateHealth, this);
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::EntityVelocity, this);
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::SpawnPosition, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::UpdateHealth, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::EntityVelocity, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::SpawnPosition, this);
     }
 
     ~SynchronizationComponent() {
@@ -40,11 +40,11 @@ public:
     }
 
     bool HasSpawned() const { return m_Spawned; }
-    void OnClientSpawn(Minecraft::PlayerPtr player);
+    void OnClientSpawn(mc::core::PlayerPtr player);
 
-    void HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet);
-    void HandlePacket(Minecraft::Packets::Inbound::EntityVelocityPacket* packet);
-    void HandlePacket(Minecraft::Packets::Inbound::SpawnPositionPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::UpdateHealthPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::EntityVelocityPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::SpawnPositionPacket* packet);
 
     void Update(double dt);
 

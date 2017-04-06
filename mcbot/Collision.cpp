@@ -4,6 +4,11 @@
 
 #include <iostream>
 
+using mc::Vector3d;
+using mc::Vector3i;
+using mc::AABB;
+using mc::Ray;
+
 template <typename T>
 inline T Sign(T val) {
     return std::signbit(val) ? static_cast<T>(-1) : static_cast<T>(1);
@@ -53,7 +58,7 @@ bool CollisionDetector::DetectCollision(Vector3d from, Vector3d rayVector, Colli
         // Look for collisions in any blocks surrounding the ray
         for (Vector3d checkDirection : directions) {
             Vector3d checkPos = position + checkDirection;
-            Minecraft::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
+            mc::block::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
 
             if (block && block->IsSolid()) {
                 AABB bounds = block->GetBoundingBox(checkPos);
@@ -115,7 +120,7 @@ void CollisionDetector::ResolveCollisions(PhysicsComponent* physics, double dt) 
             std::vector<Vector3i> surrounding = GetSurroundingLocations(playerBounds);
 
             for (Vector3i checkPos : surrounding) {
-                Minecraft::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
+                mc::block::BlockPtr block = m_World->GetBlock(checkPos).GetBlock();
 
                 if (block && block->IsSolid()) {
                     AABB blockBounds = block->GetBoundingBox(checkPos);

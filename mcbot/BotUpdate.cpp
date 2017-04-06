@@ -4,6 +4,8 @@
 #include "components/SpeedComponent.h"
 #include "components/PhysicsComponent.h"
 
+using mc::Vector3d;
+
 BotUpdate::BotUpdate(GameClient* client)
     : m_Client(client),
       m_Players(client)
@@ -13,7 +15,7 @@ BotUpdate::BotUpdate(GameClient* client)
     auto sync = std::make_shared<SynchronizationComponent>(client->GetDispatcher(), client->GetConnection(), client->GetPlayerManager());
     AddComponent(sync);
 
-    auto physics = std::make_shared<PhysicsComponent>(client->GetWorld(), AABB(Vector3d(-0.3, 0.0, -0.3), Vector3d(0.3, 1.8, 0.3)));
+    auto physics = std::make_shared<PhysicsComponent>(client->GetWorld(), mc::AABB(Vector3d(-0.3, 0.0, -0.3), Vector3d(0.3, 1.8, 0.3)));
     physics->SetMaxAcceleration(100.0f);
     physics->SetMaxRotation(3.14159 * 8);
     AddComponent(physics);

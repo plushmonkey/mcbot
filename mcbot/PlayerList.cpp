@@ -3,6 +3,9 @@
 #include "components/PhysicsComponent.h"
 #include <vector>
 
+using mc::Vector3d;
+using mc::Vector3i;
+
 PlayerList::PlayerList(GameClient* client) : m_Client(client) {
     m_Client->RegisterListener(this);
     m_Client->GetPlayerManager()->RegisterListener(this);
@@ -13,8 +16,8 @@ PlayerList::~PlayerList() {
     m_Client->GetPlayerManager()->UnregisterListener(this);
 }
 
-std::vector<Minecraft::PlayerPtr> PlayerList::GetPlayers() const {
-    std::vector<Minecraft::PlayerPtr> players;
+std::vector<mc::core::PlayerPtr> PlayerList::GetPlayers() const {
+    std::vector<mc::core::PlayerPtr> players;
 
     for (auto iter = m_Players.begin(); iter != m_Players.end(); ++iter)
         players.push_back(iter->second);
@@ -22,19 +25,19 @@ std::vector<Minecraft::PlayerPtr> PlayerList::GetPlayers() const {
     return players;
 }
 
-void PlayerList::OnClientSpawn(Minecraft::PlayerPtr player) {
+void PlayerList::OnClientSpawn(mc::core::PlayerPtr player) {
     m_BotPlayer = player;
 }
 
-void PlayerList::OnPlayerJoin(Minecraft::PlayerPtr player) {
+void PlayerList::OnPlayerJoin(mc::core::PlayerPtr player) {
     m_Players[player->GetName()] = player;
 }
 
-void PlayerList::OnPlayerLeave(Minecraft::PlayerPtr player) {
+void PlayerList::OnPlayerLeave(mc::core::PlayerPtr player) {
     m_Players.erase(player->GetName());
 }
 
-void PlayerList::UpdatePlayer(Minecraft::PlayerPtr player) {
+void PlayerList::UpdatePlayer(mc::core::PlayerPtr player) {
     auto entity = player->GetEntity();
     if (!entity) return;
 
@@ -72,7 +75,7 @@ void PlayerList::OnTick() {
         UpdatePlayer(m_BotPlayer);
 }
 
-Minecraft::PlayerPtr PlayerList::GetPlayerByName(const std::wstring& name) {
+mc::core::PlayerPtr PlayerList::GetPlayerByName(const std::wstring& name) {
     auto iter = m_Players.find(name);
     if (iter != m_Players.end())
         return iter->second;

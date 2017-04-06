@@ -9,6 +9,9 @@
 #include <iostream>
 #include <random>
 
+using mc::Vector3d;
+using mc::Vector3i;
+
 namespace ai {
 
 namespace {
@@ -79,7 +82,7 @@ SteeringAcceleration AlignSteering::GetSteering() {
     if (physics == nullptr) return steering;
 
     double rotation = m_TargetOrientation - physics->GetOrientation();
-    rotation = wrapToPi(rotation);
+    rotation = WrapToPi(rotation);
 
     double maxRotation = physics->GetMaxRotation();
     double rotationSize = std::abs(rotation);
@@ -146,7 +149,7 @@ SteeringAcceleration WanderSteering::GetSteering() {
     auto physics = GetActorComponent(m_Player, PhysicsComponent);
     if (physics == nullptr) return SteeringAcceleration();
 
-    m_WanderOrientation += randomBinomial(engine) * m_WanderRate;
+    m_WanderOrientation += RandomBinomial(engine) * m_WanderRate;
     m_TargetOrientation = m_WanderOrientation + physics->GetOrientation();
 
     m_Target = physics->GetPosition() + util::OrientationToVector(physics->GetOrientation()) * m_WanderOffset;

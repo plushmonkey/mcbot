@@ -24,8 +24,8 @@ GameClient::~GameClient() {
     m_Connection.UnregisterListener(this);
 }
 
-void GameClient::OnSocketStateChange(Network::Socket::Status newState) {
-    m_Connected = (newState == Network::Socket::Status::Connected);
+void GameClient::OnSocketStateChange(mc::network::Socket::Status newState) {
+    m_Connected = (newState == mc::network::Socket::Status::Connected);
     std::cout << "Connected: " << std::boolalpha << m_Connected << std::endl;
 }
 
@@ -64,7 +64,7 @@ void GameClient::run() {
 
         for (s64 i = 0; i < std::min(updateCount, MaximumUpdates); ++i) {
             Update(50.0 / 1000.0);
-            NotifyListeners(&ClientListener::OnTick);
+            NotifyListeners(&mc::core::ClientListener::OnTick);
         }
 
 #ifdef _DEBUG

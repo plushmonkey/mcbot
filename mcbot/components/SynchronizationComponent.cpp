@@ -5,9 +5,12 @@
 #include "../GameClient.h"
 #include <iostream>
 
+using mc::Vector3d;
+using mc::Vector3i;
+
 const char* SynchronizationComponent::name = "Synchronization";
 
-void SynchronizationComponent::OnClientSpawn(Minecraft::PlayerPtr player) {
+void SynchronizationComponent::OnClientSpawn(mc::core::PlayerPtr player) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (physics == nullptr) return;
 
@@ -25,7 +28,7 @@ void SynchronizationComponent::OnClientSpawn(Minecraft::PlayerPtr player) {
     m_Connection->SendPacket(&status);
 }
 
-void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet) {
+void SynchronizationComponent::HandlePacket(mc::protocol::packets::in::UpdateHealthPacket* packet) {
     float health = packet->GetHealth();
 
     if (health <= 0) {
@@ -34,14 +37,14 @@ void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateH
     }
 }
 
-void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::EntityVelocityPacket* packet) {
+void SynchronizationComponent::HandlePacket(mc::protocol::packets::in::EntityVelocityPacket* packet) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (physics == nullptr) return;
 
     GameClient* client = dynamic_cast<GameClient*>(m_Owner);
     if (!client) return;
 
-    Minecraft::EntityId eid = packet->GetEntityId();
+    mc::EntityId eid = packet->GetEntityId();
 
     auto playerEntity = client->GetEntityManager()->GetPlayerEntity();
     if (playerEntity && playerEntity->GetEntityId() == eid) {
@@ -51,7 +54,7 @@ void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::EntityV
     }
 }
 
-void SynchronizationComponent::HandlePacket(Minecraft::Packets::Inbound::SpawnPositionPacket* packet) {
+void SynchronizationComponent::HandlePacket(mc::protocol::packets::in::SpawnPositionPacket* packet) {
     s64 x = packet->GetLocation().GetX();
     s64 y = packet->GetLocation().GetY();
     s64 z = packet->GetLocation().GetZ();
@@ -73,8 +76,8 @@ void SynchronizationComponent::Update(double dt) {
         std::cout << "Sending respawn packet. State: Alive" << std::endl;
         physics->SetPosition(ToVector3d(m_SpawnPosition));
 
-        auto action = Minecraft::Packets::Outbound::ClientStatusPacket::Action::PerformRespawn;
-        Minecraft::Packets::Outbound::ClientStatusPacket status(action);
+        auto action = mc::protocol::packets::out::ClientStatusPacket::Action::PerformRespawn;
+        mc::protocol::packets::out::ClientStatusPacket status(action);
 
         m_Connection->SendPacket(&status);
 
@@ -84,7 +87,7 @@ void SynchronizationComponent::Update(double dt) {
     float pitch = 0.0f;
 
     // todo: Track position and orientation. Only send the larger packets when needed.
-    Minecraft::Packets::Outbound::PlayerPositionAndLookPacket response(physics->GetPosition(),
+    mc::protocol::packets::out::PlayerPositionAndLookPacket response(physics->GetPosition(),
         (float)physics->GetOrientation() * 180.0f / 3.14159f, pitch, true);
 
     m_Connection->SendPacket(&response);

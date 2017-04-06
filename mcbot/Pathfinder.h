@@ -7,15 +7,15 @@
 
 #include <vector>
 
-Vector3i GetGroundLevel(Minecraft::World* world, Vector3i pos);
+mc::Vector3i GetGroundLevel(mc::world::World* world, mc::Vector3i pos);
 
 struct CastResult {
-    std::vector<Vector3i> hit;
+    std::vector<mc::Vector3i> hit;
     std::size_t length;
     bool full;
 };
 
-CastResult RayCast(Minecraft::World* world, std::shared_ptr<WorldGraph> graph, const Vector3d& from, Vector3d direction, std::size_t length);
+CastResult RayCast(mc::world::World* world, std::shared_ptr<WorldGraph> graph, const mc::Vector3d& from, mc::Vector3d direction, std::size_t length);
 
 class Pathfinder {
 private:
@@ -23,7 +23,7 @@ private:
     std::shared_ptr<ai::path::Plan> m_Plan;
     CollisionDetector m_CollisionDetector;
 
-    bool IsNearBlocks(Vector3d pos);
+    bool IsNearBlocks(mc::Vector3d pos);
     void SmoothPath();
 
 public:

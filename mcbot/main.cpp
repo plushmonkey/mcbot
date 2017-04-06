@@ -1,43 +1,48 @@
 #include "BotUpdate.h"
 #include "chi/ChiBot.h"
 
+using mc::Vector3d;
+using mc::Vector3i;
+using mc::ToVector3d;
+using mc::ToVector3i;
+
 const bool MysticEmpire = false;
 
-class Logger : public Minecraft::Packets::PacketHandler {
+class Logger : public mc::protocol::packets::PacketHandler {
 private:
     GameClient* m_Client;
 
 public:
-    Logger(GameClient* client, Minecraft::Packets::PacketDispatcher* dispatcher)
-        : Minecraft::Packets::PacketHandler(dispatcher), m_Client(client)
+    Logger(GameClient* client, mc::protocol::packets::PacketDispatcher* dispatcher)
+        : mc::protocol::packets::PacketHandler(dispatcher), m_Client(client)
     {
-        using namespace Minecraft::Protocol;
+        using namespace mc::protocol;
 
-        dispatcher->RegisterHandler(State::Play, Play::Chat, this);
-        dispatcher->RegisterHandler(State::Play, Play::EntityEffect, this);
-        dispatcher->RegisterHandler(State::Play, Play::RemoveEntityEffect, this);
+        dispatcher->RegisterHandler(State::Play, play::Chat, this);
+        dispatcher->RegisterHandler(State::Play, play::EntityEffect, this);
+        dispatcher->RegisterHandler(State::Play, play::RemoveEntityEffect, this);
     }
 
     ~Logger() {
         GetDispatcher()->UnregisterHandler(this);
     }
 
-    void HandlePacket(Minecraft::Packets::Inbound::ChatPacket* packet) {
-        std::string message = ParseChatNode(packet->GetChatData());
+    void HandlePacket(mc::protocol::packets::in::ChatPacket* packet) {
+        std::string message = mc::util::ParseChatNode(packet->GetChatData());
 
-        std::cout << StripChatMessage(message) << std::endl;
+        std::cout << mc::util::StripChatMessage(message) << std::endl;
     }
 
-    void HandlePacket(Minecraft::Packets::Inbound::EntityEffectPacket* packet) {
-        Minecraft::EntityId eid = packet->GetEntityId();
+    void HandlePacket(mc::protocol::packets::in::EntityEffectPacket* packet) {
+        mc::EntityId eid = packet->GetEntityId();
         u8 effectId = packet->GetEffectId();
         u8 amplifier = packet->GetAmplifier();
 
         //std::cout << "Entity " << eid << " got effect " << (int)effectId << " level " << (int)amplifier << std::endl;
     }
 
-    void HandlePacket(Minecraft::Packets::Inbound::RemoveEntityEffectPacket* packet) {
-        Minecraft::EntityId eid = packet->GetEntityId();
+    void HandlePacket(mc::protocol::packets::in::RemoveEntityEffectPacket* packet) {
+        mc::EntityId eid = packet->GetEntityId();
         u8 effectId = packet->GetEffectId();
 
         //std::cout << "Entity " << eid << " lost effect " << (int)effectId << std::endl;
@@ -45,7 +50,7 @@ public:
 };
 
 int main(void) {
-    Minecraft::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
+    mc::block::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
     GameClient game;
     BotUpdate update(&game);
     Logger logger(&game, game.GetDispatcher());

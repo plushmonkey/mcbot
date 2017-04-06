@@ -10,7 +10,7 @@ void EffectComponent::Update(double dt) {
     }
 }
 
-void EffectComponent::HandlePacket(Minecraft::Packets::Inbound::EntityEffectPacket* packet) {
+void EffectComponent::HandlePacket(mc::protocol::packets::in::EntityEffectPacket* packet) {
     GameClient* client = dynamic_cast<GameClient*>(m_Owner);
     if (client == nullptr) return;
     if (client->GetEntityManager()->GetPlayerEntity()->GetEntityId() != packet->GetEntityId()) return;
@@ -24,7 +24,7 @@ void EffectComponent::HandlePacket(Minecraft::Packets::Inbound::EntityEffectPack
     m_Effects[effect] = data;
 }
 
-void EffectComponent::HandlePacket(Minecraft::Packets::Inbound::RemoveEntityEffectPacket* packet) {
+void EffectComponent::HandlePacket(mc::protocol::packets::in::RemoveEntityEffectPacket* packet) {
     GameClient* client = dynamic_cast<GameClient*>(m_Owner);
     if (client == nullptr) return;
     if (client->GetEntityManager()->GetPlayerEntity()->GetEntityId() != packet->GetEntityId()) return;
@@ -34,7 +34,7 @@ void EffectComponent::HandlePacket(Minecraft::Packets::Inbound::RemoveEntityEffe
     m_Effects.erase(effect);
 }
 
-void EffectComponent::HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet) {
+void EffectComponent::HandlePacket(mc::protocol::packets::in::UpdateHealthPacket* packet) {
     if (packet->GetHealth() <= 0) {
         m_Effects.clear();
     }

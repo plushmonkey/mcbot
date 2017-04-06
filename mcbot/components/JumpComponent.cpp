@@ -9,6 +9,8 @@
 const char* JumpComponent::name = "Jump";
 const s64 JumpCooldown = 500;
 
+using mc::Vector3d;
+
 void JumpComponent::Update(double dt) {
     auto physics = GetActorComponent(m_Owner, PhysicsComponent);
     if (!physics) return;

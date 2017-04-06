@@ -1,7 +1,7 @@
 #ifndef AI_UTILITY_H_
 #define AI_UTILITY_H_
 
-#include <mclib/Common.h>
+#include <mclib/common/Common.h>
 
 #undef min
 #undef max
@@ -9,7 +9,7 @@
 namespace util {
 
 s64 GetTime();
-Vector3d OrientationToVector(double orientation);
+mc::Vector3d OrientationToVector(double orientation);
 
 template <typename T, int Amount>
 class Smoother {
