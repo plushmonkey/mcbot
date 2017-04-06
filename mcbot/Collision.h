@@ -1,33 +1,33 @@
 #ifndef MCBOT_COLLISION_H_
 #define MCBOT_COLLISION_H_
 
-#include <mclib/World.h>
+#include <mclib/world/World.h>
 
 class PhysicsComponent;
 
 class Collision {
 private:
-    Vector3d m_Position;
-    Vector3d m_Normal;
+    mc::Vector3d m_Position;
+    mc::Vector3d m_Normal;
 
 public:
     Collision() { }
-    Collision(Vector3d position, Vector3d normal) : m_Position(position), m_Normal(normal) { }
+    Collision(mc::Vector3d position, mc::Vector3d normal) : m_Position(position), m_Normal(normal) { }
 
-    Vector3d GetPosition() const { return m_Position; }
-    Vector3d GetNormal() const { return m_Normal; }
+    mc::Vector3d GetPosition() const { return m_Position; }
+    mc::Vector3d GetNormal() const { return m_Normal; }
 };
 
 class CollisionDetector {
 private:
-    Minecraft::World* m_World;
+    mc::world::World* m_World;
 
-    std::vector<Vector3i> GetSurroundingLocations(AABB bounds);
+    std::vector<mc::Vector3i> GetSurroundingLocations(mc::AABB bounds);
 
 public:
-    CollisionDetector(Minecraft::World* world) : m_World(world) { }
+    CollisionDetector(mc::world::World* world) : m_World(world) { }
 
-    bool DetectCollision(Vector3d from, Vector3d rayVector, Collision* collision) const;
+    bool DetectCollision(mc::Vector3d from, mc::Vector3d rayVector, Collision* collision) const;
 
     void ResolveCollisions(PhysicsComponent* physics, double dt);
 };

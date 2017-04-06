@@ -6,6 +6,8 @@
 #include <iostream>
 #include <random>
 
+using mc::Vector3d;
+
 namespace {
 
 std::random_device dev;

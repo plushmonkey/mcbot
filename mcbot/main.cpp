@@ -6,6 +6,11 @@
 #include "components/TargetingComponent.h"
 #include "actions/WanderAction.h"
 
+using mc::Vector3d;
+using mc::Vector3i;
+using mc::ToVector3d;
+using mc::ToVector3i;
+
 class TargetPlayerAction : public DecisionAction {
 private:
     GameClient* m_Client;
@@ -14,22 +19,22 @@ public:
     TargetPlayerAction(GameClient* client) : m_Client(client) { }
 
     bool HasTarget() {
-        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
         if (!targetPlayer) return false;
 
-        Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+        mc::entity::EntityPtr entity = targetPlayer->GetEntity();
         return entity != nullptr;
     }
 
     void Act() override {
-        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
         auto entity = targetPlayer->GetEntity();
 
         auto targeting = GetActorComponent(m_Client, TargetingComponent);
         if (!targeting) return;
 
         targeting->SetTargetEntity(entity->GetEntityId());
-        targeting->SetTarget(ToVector3i(entity->GetPosition()));
+        targeting->SetTarget(mc::ToVector3i(entity->GetPosition()));
     }
 };
 
@@ -42,7 +47,7 @@ protected:
     bool SelectItem(s32 id) {
         std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
 
-        Minecraft::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+        mc::inventory::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
 
         if (!slot || slot->GetItemId() != id) {
             s32 itemIndex = inventory->FindItemById(id);
@@ -66,7 +71,7 @@ public:
     AttackAction(GameClient* client, s64 attackCooldown) : m_Client(client), m_LastAttack(0), m_AttackCooldown(attackCooldown) { }
 
     void Act() override {
-        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
         auto entity = targetPlayer->GetEntity();
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
         auto targeting = GetActorComponent(m_Client, TargetingComponent);
@@ -89,7 +94,7 @@ public:
         }
     }
 
-    virtual void Attack(Minecraft::EntityPtr entity) = 0;
+    virtual void Attack(mc::entity::EntityPtr entity) = 0;
 };
 
 class MeleeAction : public AttackAction {
@@ -105,7 +110,7 @@ public:
 
     }
 
-    void Attack(Minecraft::EntityPtr entity) {
+    void Attack(mc::entity::EntityPtr entity) {
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
 
         Vector3d botPos = physics->GetPosition();
@@ -113,14 +118,14 @@ public:
 
         if ((targetPos - botPos).LengthSq() > AttackRangeSq) return;
 
-        using namespace Minecraft::Packets::Outbound;
+        using namespace mc::protocol::packets::out;
 
         const s32 StoneSwordId = 272;
 
         SelectItem(StoneSwordId);
 
         // Send arm swing
-        AnimationPacket animationPacket(Minecraft::Hand::Main);
+        AnimationPacket animationPacket(mc::Hand::Main);
         m_Client->GetConnection()->SendPacket(&animationPacket);
 
         // Send attack
@@ -129,10 +134,10 @@ public:
     }
 
     double DistanceToTarget() {
-        Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
 
         if (targetPlayer) {
-            Minecraft::EntityPtr entity = targetPlayer->GetEntity();
+            mc::entity::EntityPtr entity = targetPlayer->GetEntity();
             if (entity) {
                 auto physics = GetActorComponent(m_Client, PhysicsComponent);
                 if (physics)
@@ -178,7 +183,7 @@ void CleanupBot(BotUpdate* update) {
 }
 
 int main(void) {
-    Minecraft::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
+    mc::block::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
     GameClient game;
     BotUpdate update(&game);
 

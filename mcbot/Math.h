@@ -1,7 +1,7 @@
 #ifndef MCBOT_MATH_H_
 #define MCBOT_MATH_H_
 
-#include <mclib/Vector.h>
+#include <mclib/common/Vector.h>
 #include <cmath>
 
 #ifndef M_PI
@@ -12,27 +12,27 @@
 #define M_TAU M_PI * 2
 #endif
 
-inline Vector3d Hadamard(Vector3d first, Vector3d second) {
-    return Vector3d(first.x * second.x, first.y * second.y, first.z * second.z);
+inline mc::Vector3d Hadamard(mc::Vector3d first, mc::Vector3d second) {
+    return mc::Vector3d(first.x * second.x, first.y * second.y, first.z * second.z);
 }
 
-inline double wrapMax(double x, double max) {
+inline double WrapMax(double x, double max) {
     return fmod(max + fmod(x, max), max);
 }
 
-inline double wrapMinMax(double x, double min, double max) {
-    return min + wrapMax(x - min, max - min);
+inline double WrapMinMax(double x, double min, double max) {
+    return min + WrapMax(x - min, max - min);
 }
 
 template <typename Engine>
-double randomBinomial(Engine engine) {
+double RandomBinomial(Engine engine) {
     std::uniform_real_distribution<double> dist(0, 1);
 
     return dist(engine) - dist(engine);
 }
 
-inline double wrapToPi(double rads) {
-    return wrapMinMax(rads, -M_PI, M_PI);
+inline double WrapToPi(double rads) {
+    return WrapMinMax(rads, -M_PI, M_PI);
 }
 
 #endif

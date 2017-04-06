@@ -3,7 +3,7 @@
 
 #include "../Component.h"
 #include "../Collision.h"
-#include <mclib/World.h>
+#include <mclib/world/World.h>
 
 class JumpComponent : public Component {
 public:
@@ -11,13 +11,13 @@ public:
 
 private:
     CollisionDetector m_CollisionDetector;
-    Minecraft::World* m_World;
+    mc::world::World* m_World;
     double m_Power;
     s64 m_LastJump;
     bool m_Jump;
 
 public:
-    JumpComponent(Minecraft::World* world, double power)
+    JumpComponent(mc::world::World* world, double power)
         : m_CollisionDetector(world), m_World(world), m_Power(power), m_LastJump(0), m_Jump(false)
     {
 

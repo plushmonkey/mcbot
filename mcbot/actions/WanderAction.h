@@ -30,13 +30,13 @@ public:
         physics->ApplyAcceleration(steering.movement);
         physics->ApplyRotation(steering.rotation);
 
-        Vector3d pos = physics->GetPosition();
-        Vector3d vel = physics->GetVelocity();
+        mc::Vector3d pos = physics->GetPosition();
+        mc::Vector3d vel = physics->GetVelocity();
 
-        Vector3d projectedPos = pos + (vel * 50.0 / 1000.0);
+        mc::Vector3d projectedPos = pos + (vel * 50.0 / 1000.0);
 
-        Minecraft::BlockPtr projectedBlock = m_Client->GetWorld()->GetBlock(projectedPos).GetBlock();
-        Minecraft::BlockPtr block = m_Client->GetWorld()->GetBlock(projectedPos - Vector3d(0, 1, 0)).GetBlock();
+        mc::block::BlockPtr projectedBlock = m_Client->GetWorld()->GetBlock(projectedPos).GetBlock();
+        mc::block::BlockPtr block = m_Client->GetWorld()->GetBlock(projectedPos - mc::Vector3d(0, 1, 0)).GetBlock();
 
         if (!projectedBlock || projectedBlock->IsSolid() || !block || !block->IsSolid()) {
             physics->SetVelocity(-vel * 1.5);

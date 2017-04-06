@@ -1,9 +1,9 @@
 #ifndef INVENTORY_H_
 #define INVENTORY_H_
 
-#include <mclib/Slot.h>
-#include <mclib/Packets/PacketHandler.h>
-#include <mclib/Connection.h>
+#include <mclib/core/Connection.h>
+#include <mclib/inventory/Slot.h>
+#include <mclib/protocol/packets/PacketHandler.h>
 
 class Inventory {
 public:
@@ -11,15 +11,15 @@ public:
     static const s32 PLAYER_INVENTORY_ID;
 
 private:
-    Minecraft::Connection* m_Connection;
-    std::map<s32, Minecraft::Slot> m_Inventory;
+    mc::core::Connection* m_Connection;
+    std::map<s32, mc::inventory::Slot> m_Inventory;
     int m_WindowId;
     s32 m_SelectedHotbarIndex;
 
 public:
-    Inventory(Minecraft::Connection* connection, int windowId);
+    Inventory(mc::core::Connection* connection, int windowId);
 
-    Minecraft::Slot* GetSlot(s32 index);
+    mc::inventory::Slot* GetSlot(s32 index);
 
     // Returns item slot index
     s32 FindItemById(s32 itemId);
@@ -32,20 +32,20 @@ public:
     friend class InventoryManager;
 };
 
-class InventoryManager : public Minecraft::Packets::PacketHandler {
+class InventoryManager : public mc::protocol::packets::PacketHandler {
 private:
-    Minecraft::Connection* m_Connection;
+    mc::core::Connection* m_Connection;
     std::map<s32, std::shared_ptr<Inventory>> m_Inventories;
 
-    void SetSlot(s32 windowId, s32 slotIndex, const Minecraft::Slot& slot);
+    void SetSlot(s32 windowId, s32 slotIndex, const mc::inventory::Slot& slot);
 
 public:
-    InventoryManager(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection);
+    InventoryManager(mc::protocol::packets::PacketDispatcher* dispatcher, mc::core::Connection* connection);
     ~InventoryManager();
 
-    void HandlePacket(Minecraft::Packets::Inbound::SetSlotPacket* packet);
-    void HandlePacket(Minecraft::Packets::Inbound::WindowItemsPacket* packet);
-    void HandlePacket(Minecraft::Packets::Inbound::HeldItemChangePacket* packet);
+    void HandlePacket(mc::protocol::packets::in::SetSlotPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::WindowItemsPacket* packet);
+    void HandlePacket(mc::protocol::packets::in::HeldItemChangePacket* packet);
 
     std::shared_ptr<Inventory> GetInventory(s32 windowId);
 };

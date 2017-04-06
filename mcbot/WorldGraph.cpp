@@ -7,6 +7,10 @@
 
 #include <iostream>
 
+using mc::Vector3d;
+using mc::Vector3i;
+using mc::ToVector3i;
+
 std::shared_ptr<PhysicsComponent> WorldGraph::ChunkTaskComparator::physics = nullptr;
 
 // Prioritize chunks whose y value is closest to the player's y value.
@@ -49,28 +53,28 @@ ai::path::Node* WorldGraph::GetNode(Vector3i pos) {
 
 // The check pos is not solid, the block above is not solid, and the block below is solid
 bool WorldGraph::IsWalkable(Vector3i pos) const {
-    Minecraft::World* world = m_Client->GetWorld();
+    mc::world::World* world = m_Client->GetWorld();
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
+    mc::block::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
-    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
-    Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0)).GetBlock();
+    mc::block::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
+    mc::block::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0)).GetBlock();
 
     return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
 }
 
 int WorldGraph::IsSafeFall(Vector3i pos) const {
-    Minecraft::World* world = m_Client->GetWorld();
+    mc::world::World* world = m_Client->GetWorld();
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
+    mc::block::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
-    Minecraft::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
+    mc::block::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
 
     if (!checkBlock || checkBlock->IsSolid()) return 0;
     if (!aBlock || aBlock->IsSolid()) return 0;
 
     for (int i = 0; i < 4; ++i) {
-        Minecraft::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i + 1, 0)).GetBlock();
+        mc::block::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, i + 1, 0)).GetBlock();
 
         if (bBlock && bBlock->IsSolid()) return i + 1;
         //if (bBlock && bBlock->IsSolid() || (bBlock->GetType() == 8 || bBlock->GetType() == 9)) return i + 1;
@@ -80,8 +84,8 @@ int WorldGraph::IsSafeFall(Vector3i pos) const {
 }
 
 bool WorldGraph::IsWater(Vector3i pos) const {
-    Minecraft::World* world = m_Client->GetWorld();
-    Minecraft::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
+    mc::world::World* world = m_Client->GetWorld();
+    mc::block::BlockPtr checkBlock = world->GetBlock(pos).GetBlock();
 
     return checkBlock && (checkBlock->GetType() == 8 || checkBlock->GetType() == 9);
 }
@@ -97,7 +101,7 @@ WorldGraph::~WorldGraph() {
     m_Client->GetWorld()->UnregisterListener(this);
 }
 
-void WorldGraph::OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, u16 yIndex) {
+void WorldGraph::OnChunkLoad(mc::world::ChunkPtr chunk, const mc::world::ChunkColumnMetadata& meta, u16 yIndex) {
     for (s32 i = 0; i < 16; ++i) {
         if (meta.sectionmask & (1 << i)) {
             m_BuildQueue.Push(Vector3i(meta.x, i, meta.z));
@@ -107,7 +111,7 @@ void WorldGraph::OnChunkLoad(Minecraft::ChunkPtr chunk, const Minecraft::ChunkCo
     // todo: invalidate null chunks
 }
 
-void WorldGraph::OnChunkUnload(Minecraft::ChunkColumnPtr chunk) {
+void WorldGraph::OnChunkUnload(mc::world::ChunkColumnPtr chunk) {
     if (chunk == nullptr) return;
 
     auto remove = std::remove_if(m_BuildQueue.GetData().begin(), m_BuildQueue.GetData().end(), [&](Vector3i area) {
@@ -126,7 +130,7 @@ void WorldGraph::OnChunkUnload(Minecraft::ChunkColumnPtr chunk) {
     
 }
 
-void WorldGraph::OnBlockChange(Vector3i position, Minecraft::BlockState newBlock, Minecraft::BlockState oldBlock) {
+void WorldGraph::OnBlockChange(Vector3i position, mc::block::BlockState newBlock, mc::block::BlockState oldBlock) {
     const s32 InvalidationRadius = 1;
     std::vector<ai::path::Node*> nodes;
 
@@ -203,10 +207,10 @@ void WorldGraph::ProcessQueue() {
 
     Vector3i current = m_BuildQueue.Pop();
 
-    Minecraft::ChunkColumnPtr col = m_Client->GetWorld()->GetChunk(current * 16);
+    mc::world::ChunkColumnPtr col = m_Client->GetWorld()->GetChunk(current * 16);
     if (!col) return;
 
-    Minecraft::ChunkPtr chunk = (*col)[(std::size_t)current.y];
+    mc::world::ChunkPtr chunk = (*col)[(std::size_t)current.y];
     if (!chunk) return;
 
     m_ProcessedChunks.push_back(current);
@@ -221,7 +225,7 @@ void WorldGraph::ProcessQueue() {
 }
 
 std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
-    Minecraft::World* world = m_Client->GetWorld();
+    mc::world::World* world = m_Client->GetWorld();
     std::vector<Link> links;
 
     static const std::vector<Vector3i> directions = {
@@ -236,7 +240,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
         Vector3i(-1, 1, 0), Vector3i(1, 1, 0), Vector3i(0, 1, -1), Vector3i(0, 1, 1),
     };
 
-    Minecraft::BlockPtr checkBlock = world->GetBlock(checkPos).GetBlock();
+    mc::block::BlockPtr checkBlock = world->GetBlock(checkPos).GetBlock();
 
     // Skip because it's not loaded yet or it's solid
     if (!checkBlock || checkBlock->IsSolid()) return links;   
@@ -267,7 +271,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
         for (int i = 0; i < fallDist; ++i) {
             Vector3i fallPos = checkPos - Vector3i(0, i + 1, 0);
 
-            Minecraft::BlockPtr block = world->GetBlock(fallPos).GetBlock();
+            mc::block::BlockPtr block = world->GetBlock(fallPos).GetBlock();
             if (!block || block->IsSolid()) break;
 
             links.emplace_back(current, fallPos, 1.0f);
@@ -279,8 +283,8 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
     return links;
 }
 
-std::vector<WorldGraph::Link> WorldGraph::ProcessChunk(Minecraft::ChunkPtr chunk, const Minecraft::ChunkColumnMetadata& meta, s32 yIndex) {
-    Minecraft::World* world = m_Client->GetWorld();
+std::vector<WorldGraph::Link> WorldGraph::ProcessChunk(mc::world::ChunkPtr chunk, const mc::world::ChunkColumnMetadata& meta, s32 yIndex) {
+    mc::world::World* world = m_Client->GetWorld();
     std::vector<Link> links;
     
     std::shared_ptr<PhysicsComponent> physics = GetActorComponent(m_Client, PhysicsComponent);

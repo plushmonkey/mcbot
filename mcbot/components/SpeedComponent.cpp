@@ -9,6 +9,8 @@ const char* SpeedComponent::name = "Speed";
 
 #undef max
 
+using mc::Vector3d;
+
 namespace {
 
 const float WalkingSpeed = 4.3f;
@@ -20,8 +22,8 @@ const float SwimSpeedSubmerged = 1.97f;
 const u16 StillWater = 9;
 const u16 FlowingWater = 8;
 
-bool IsWater(Minecraft::World* world, Vector3d pos) {
-    Minecraft::BlockPtr block = world->GetBlock(pos).GetBlock();
+bool IsWater(mc::world::World* world, Vector3d pos) {
+    mc::block::BlockPtr block = world->GetBlock(pos).GetBlock();
 
     return block && (block->GetType() == StillWater || block->GetType() == FlowingWater);
 }
@@ -97,7 +99,7 @@ void SpeedComponent::SetMovementType(Movement movement) {
         return;
     }
 
-    using namespace Minecraft::Packets::Outbound;
+    using namespace mc::protocol::packets::out;
 
     EntityActionPacket::Action action;
     if (movement == Movement::Normal) {

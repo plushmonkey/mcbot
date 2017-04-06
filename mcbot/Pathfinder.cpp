@@ -6,10 +6,13 @@
 
 #include <iostream>
 
-Vector3i GetGroundLevel(Minecraft::World* world, Vector3i pos) {
+using mc::Vector3i;
+using mc::Vector3d;
+
+Vector3i GetGroundLevel(mc::world::World* world, Vector3i pos) {
     s32 y;
     for (y = (s32)pos.y; y >= 0; --y) {
-        Minecraft::BlockPtr block = world->GetBlock(Vector3i(pos.x, y, pos.z)).GetBlock();
+        mc::block::BlockPtr block = world->GetBlock(Vector3i(pos.x, y, pos.z)).GetBlock();
 
         if (block && block->IsSolid()) break;
     }
@@ -17,7 +20,7 @@ Vector3i GetGroundLevel(Minecraft::World* world, Vector3i pos) {
     return Vector3i(pos.x, y + 1, pos.z);
 }
 
-CastResult RayCast(Minecraft::World* world, std::shared_ptr<WorldGraph> graph, const Vector3d& from, Vector3d direction, std::size_t length) {
+CastResult RayCast(mc::world::World* world, std::shared_ptr<WorldGraph> graph, const Vector3d& from, Vector3d direction, std::size_t length) {
     CastResult result;
 
     std::vector<Vector3i> hit(length);
@@ -28,7 +31,7 @@ CastResult RayCast(Minecraft::World* world, std::shared_ptr<WorldGraph> graph, c
 
     for (std::size_t i = 0; i < length; ++i) {
         Vector3i check = ToVector3i(from + (direction * i));
-        Minecraft::BlockPtr block = world->GetBlock(check).GetBlock();
+        mc::block::BlockPtr block = world->GetBlock(check).GetBlock();
         bool walkable = graph->IsWalkable(check);
         if (walkable && block && !block->IsSolid()) {
             hit.push_back(check);
@@ -46,13 +49,13 @@ CastResult RayCast(Minecraft::World* world, std::shared_ptr<WorldGraph> graph, c
 
 
 bool Pathfinder::IsNearBlocks(Vector3d pos) {
-    Minecraft::World* world = m_Client->GetWorld();
+    mc::world::World* world = m_Client->GetWorld();
     static const std::vector<Vector3d> directions = {
         Vector3d(-1, 0, 0), Vector3d(1, 0, 0), Vector3d(0, 0, -1), Vector3d(0, 0, 1)
     };
 
     for (Vector3d dir : directions) {
-        Minecraft::BlockPtr block = world->GetBlock(pos + dir).GetBlock();
+        mc::block::BlockPtr block = world->GetBlock(pos + dir).GetBlock();
 
         if (!block || block->IsSolid()) return true;
     }

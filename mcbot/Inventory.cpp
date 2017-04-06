@@ -1,11 +1,11 @@
 #include "Inventory.h"
 
-#include <mclib/Packets/PacketDispatcher.h>
+#include <mclib/protocol/packets/PacketDispatcher.h>
 
 const s32 Inventory::HOTBAR_SLOT_START = 36;
 const s32 Inventory::PLAYER_INVENTORY_ID = 0;
 
-Inventory::Inventory(Minecraft::Connection* connection, int windowId)
+Inventory::Inventory(mc::core::Connection* connection, int windowId)
     : m_WindowId(windowId),
       m_Connection(connection),
       m_SelectedHotbarIndex(0)
@@ -13,14 +13,14 @@ Inventory::Inventory(Minecraft::Connection* connection, int windowId)
     
 }
 
-Minecraft::Slot* Inventory::GetSlot(s32 index) {
+mc::inventory::Slot* Inventory::GetSlot(s32 index) {
     auto iter = m_Inventory.find(index);
     if (iter == m_Inventory.end()) return nullptr;
     return &iter->second;
 }
 
 s32 Inventory::FindItemById(s32 itemId) {
-    auto iter = std::find_if(m_Inventory.begin(), m_Inventory.end(), [&](const std::pair<s32, Minecraft::Slot>& slot) {
+    auto iter = std::find_if(m_Inventory.begin(), m_Inventory.end(), [&](const std::pair<s32, mc::inventory::Slot>& slot) {
         return slot.second.GetItemId() == itemId;
     });
 
@@ -33,18 +33,18 @@ void Inventory::SelectHotbarSlot(s32 hotbarIndex) {
 
     m_SelectedHotbarIndex = hotbarIndex;
 
-    Minecraft::Packets::Outbound::HeldItemChangePacket heldItemPacket(hotbarIndex);
+    mc::protocol::packets::out::HeldItemChangePacket heldItemPacket(hotbarIndex);
     m_Connection->SendPacket(&heldItemPacket);
 }
 
-InventoryManager::InventoryManager(Minecraft::Packets::PacketDispatcher* dispatcher, Minecraft::Connection* connection)
-    : Minecraft::Packets::PacketHandler(dispatcher),
+InventoryManager::InventoryManager(mc::protocol::packets::PacketDispatcher* dispatcher, mc::core::Connection* connection)
+    : mc::protocol::packets::PacketHandler(dispatcher),
       m_Connection(connection)
 {
-    using namespace Minecraft::Protocol;
-    dispatcher->RegisterHandler(State::Play, Play::SetSlot, this);
-    dispatcher->RegisterHandler(State::Play, Play::HeldItemChange, this);
-    dispatcher->RegisterHandler(State::Play, Play::WindowItems, this);
+    using namespace mc::protocol;
+    dispatcher->RegisterHandler(State::Play, play::SetSlot, this);
+    dispatcher->RegisterHandler(State::Play, play::HeldItemChange, this);
+    dispatcher->RegisterHandler(State::Play, play::WindowItems, this);
 }
 
 InventoryManager::~InventoryManager() {
@@ -57,7 +57,7 @@ std::shared_ptr<Inventory> InventoryManager::GetInventory(s32 windowId) {
     return iter->second;
 }
 
-void InventoryManager::SetSlot(s32 windowId, s32 slotIndex, const Minecraft::Slot& slot) {
+void InventoryManager::SetSlot(s32 windowId, s32 slotIndex, const mc::inventory::Slot& slot) {
     auto iter = m_Inventories.find(windowId);
 
     std::shared_ptr<Inventory> inventory;
@@ -71,19 +71,19 @@ void InventoryManager::SetSlot(s32 windowId, s32 slotIndex, const Minecraft::Slo
     inventory->m_Inventory[slotIndex] = slot;
 }
 
-void InventoryManager::HandlePacket(Minecraft::Packets::Inbound::SetSlotPacket* packet) {
+void InventoryManager::HandlePacket(mc::protocol::packets::in::SetSlotPacket* packet) {
     SetSlot(packet->GetWindowId(), packet->GetSlotIndex(), packet->GetSlot());
 }
 
-void InventoryManager::HandlePacket(Minecraft::Packets::Inbound::WindowItemsPacket* packet) {
-    const std::vector<Minecraft::Slot>& slots = packet->GetSlots();
+void InventoryManager::HandlePacket(mc::protocol::packets::in::WindowItemsPacket* packet) {
+    const std::vector<mc::inventory::Slot>& slots = packet->GetSlots();
 
     for (std::size_t i = 0; i < slots.size(); ++i) {
         SetSlot(packet->GetWindowId(), i, slots[i]);
     }
 }
 
-void InventoryManager::HandlePacket(Minecraft::Packets::Inbound::HeldItemChangePacket* packet) {
+void InventoryManager::HandlePacket(mc::protocol::packets::in::HeldItemChangePacket* packet) {
     auto iter = m_Inventories.find(Inventory::PLAYER_INVENTORY_ID);
 
     if (iter == m_Inventories.end()) {

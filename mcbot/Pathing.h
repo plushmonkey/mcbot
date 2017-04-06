@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <list>
 
-#include <mclib/Common.h>
+#include <mclib/common/Common.h>
 
 namespace ai {
 namespace path {
@@ -16,15 +16,15 @@ class Edge;
 
 class Node {
 private:
-    Vector3i m_Position;
+    mc::Vector3i m_Position;
     std::vector<Edge*> m_Edges;
 
     Edge* FindNodeEdge(Node* other) const;
 
 public:
-    Node(Vector3i position);
+    Node(mc::Vector3i position);
 
-    Vector3i GetPosition() const { return m_Position; }
+    mc::Vector3i GetPosition() const { return m_Position; }
     
     void AddEdge(Edge* edge);
     void RemoveEdge(Edge* edge);
@@ -190,16 +190,16 @@ public:
 // Extend this and fill out nodes/edges with world data
 class Graph {
 protected:
-    std::map<Vector3i, Node*> m_Nodes;
+    std::map<mc::Vector3i, Node*> m_Nodes;
     // Store edges by position of first node for quick lookup
-    std::map<Vector3i, std::vector<Edge*>> m_Edges;
+    std::map<mc::Vector3i, std::vector<Edge*>> m_Edges;
 
     bool LinkNodes(Node* first, Node* second, float weight = 1.0);
 public:
     virtual ~Graph();
 
-    Node* FindClosest(const Vector3i& pos) const;
-    std::shared_ptr<Plan> FindPath(const Vector3i& start, const Vector3i& end) const;
+    Node* FindClosest(const mc::Vector3i& pos) const;
+    std::shared_ptr<Plan> FindPath(const mc::Vector3i& start, const mc::Vector3i& end) const;
 
     void Destroy();
 };

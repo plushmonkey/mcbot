@@ -9,8 +9,8 @@ public:
     static const char* name;
 
 private:
-    Vector3i m_Target;
-    Minecraft::EntityId m_TargetEntity;
+    mc::Vector3i m_Target;
+    mc::EntityId m_TargetEntity;
 
 public:
     TargetingComponent()
@@ -21,11 +21,11 @@ public:
 
     void Update(double dt) { }
 
-    Vector3i GetTarget() const { return m_Target; }
-    void SetTarget(Vector3i target) { m_Target = target; }
+    mc::Vector3i GetTarget() const { return m_Target; }
+    void SetTarget(mc::Vector3i target) { m_Target = target; }
 
-    Minecraft::EntityId GetTargetEntity() const { return m_TargetEntity; }
-    void SetTargetEntity(Minecraft::EntityId eid) { m_TargetEntity = eid; }
+    mc::EntityId GetTargetEntity() const { return m_TargetEntity; }
+    void SetTargetEntity(mc::EntityId eid) { m_TargetEntity = eid; }
 
     const char* GetName() const { return name; }
 };

@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+using mc::Vector3d;
+
 namespace util {
 
 s64 GetTime() {

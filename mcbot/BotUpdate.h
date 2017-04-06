@@ -7,7 +7,7 @@
 #include "Decision.h"
 #include "Component.h"
 
-class BotUpdate : public ClientListener {
+class BotUpdate : public mc::core::ClientListener {
 private:
     GameClient* m_Client;
     PlayerList m_Players;

@@ -2,9 +2,9 @@
 #define MCBOT_EFFECT_COMPONENT_H_
 
 #include "../Component.h"
-#include <mclib/Common.h>
-#include <mclib/Packets/PacketHandler.h>
-#include <mclib/Packets/PacketDispatcher.h>
+#include <mclib/common/Common.h>
+#include <mclib/protocol/packets/PacketDispatcher.h>
+#include <mclib/protocol/packets/PacketHandler.h>
 
 enum class Effect {
     Speed = 1,
@@ -36,7 +36,7 @@ enum class Effect {
     BadLuck
 };
 
-class EffectComponent : public Component, Minecraft::Packets::PacketHandler {
+class EffectComponent : public Component, mc::protocol::packets::PacketHandler {
 public:
     struct EffectData {
         double duration;
@@ -50,12 +50,12 @@ private:
     std::map<Effect, EffectData> m_Effects;
 
 public:
-    EffectComponent(Minecraft::Packets::PacketDispatcher* dispatcher)
-        : Minecraft::Packets::PacketHandler(dispatcher)
+    EffectComponent(mc::protocol::packets::PacketDispatcher* dispatcher)
+        : mc::protocol::packets::PacketHandler(dispatcher)
     {
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::EntityEffect, this);
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::RemoveEntityEffect, this);
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::UpdateHealth, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::EntityEffect, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::RemoveEntityEffect, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::UpdateHealth, this);
     }
 
     ~EffectComponent() {
@@ -63,9 +63,9 @@ public:
     }
 
     void Update(double dt);
-    void HandlePacket(Minecraft::Packets::Inbound::EntityEffectPacket* packet) override;
-    void HandlePacket(Minecraft::Packets::Inbound::RemoveEntityEffectPacket* packet) override;
-    void HandlePacket(Minecraft::Packets::Inbound::UpdateHealthPacket* packet) override;
+    void HandlePacket(mc::protocol::packets::in::EntityEffectPacket* packet) override;
+    void HandlePacket(mc::protocol::packets::in::RemoveEntityEffectPacket* packet) override;
+    void HandlePacket(mc::protocol::packets::in::UpdateHealthPacket* packet) override;
 
     bool HasEffect(Effect effect) const;
     const EffectData* GetEffectData(Effect effect) const;

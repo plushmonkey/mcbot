@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++11 -Wall -fPIC -O2 -I/usr/include/jsoncpp -Ilib/mclib
+CXXFLAGS=-std=c++11 -Wall -fPIC -O2 -I/usr/include/jsoncpp -Ilib/mclib/mclib/include
 LIBS=-L. -ljsoncpp -lmc
 CXX=clang++
 BIN=bin

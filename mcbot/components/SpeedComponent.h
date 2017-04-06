@@ -3,8 +3,8 @@
 
 #include "../Component.h"
 
-#include <mclib/Connection.h>
-#include <mclib/World.h>
+#include <mclib/core/Connection.h>
+#include <mclib/world/World.h>
 
 // Sets the physics max speed based on current block and whether or not sprint is enabled.
 class SpeedComponent : public Component {
@@ -13,12 +13,12 @@ public:
 
     enum class Movement { Normal, Sneaking, Sprinting };
 private:
-    Minecraft::Connection* m_Connection;
-    Minecraft::World* m_World;
+    mc::core::Connection* m_Connection;
+    mc::world::World* m_World;
     Movement m_Movement;
 
 public:
-    SpeedComponent(Minecraft::Connection* connection, Minecraft::World* world)
+    SpeedComponent(mc::core::Connection* connection, mc::world::World* world)
         : m_Connection(connection),
         m_World(world),
         m_Movement(Movement::Normal)
