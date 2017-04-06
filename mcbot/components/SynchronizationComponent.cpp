@@ -22,8 +22,8 @@ void SynchronizationComponent::OnClientSpawn(mc::core::PlayerPtr player) {
     m_Spawned = true;
     std::cout << "Position corrected to " << physics->GetPosition() << " from " << oldPos << std::endl;
 
-    auto action = Minecraft::Packets::Outbound::ClientStatusPacket::Action::PerformRespawn;
-    Minecraft::Packets::Outbound::ClientStatusPacket status(action);
+    auto action = mc::protocol::packets::out::ClientStatusPacket::Action::PerformRespawn;
+    mc::protocol::packets::out::ClientStatusPacket status(action);
 
     m_Connection->SendPacket(&status);
 }
@@ -62,8 +62,8 @@ void SynchronizationComponent::HandlePacket(mc::protocol::packets::in::SpawnPosi
     m_SpawnPosition = Vector3i((s32)x, (s32)y, (s32)z);
     std::cout << "Set spawn position to " << m_SpawnPosition << std::endl;
 
-    auto action = Minecraft::Packets::Outbound::ClientStatusPacket::Action::PerformRespawn;
-    Minecraft::Packets::Outbound::ClientStatusPacket status(action);
+    auto action = mc::protocol::packets::out::ClientStatusPacket::Action::PerformRespawn;
+    mc::protocol::packets::out::ClientStatusPacket status(action);
 
     m_Connection->SendPacket(&status);
 }

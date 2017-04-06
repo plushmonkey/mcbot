@@ -2,28 +2,28 @@
 #define MCBOT_STUCK_COMPONENT_H_
 
 #include "../../Component.h"
-#include <mclib/Common.h>
-#include <mclib/Packets/PacketHandler.h>
-#include <mclib/Packets/PacketDispatcher.h>
+#include <mclib/common/Common.h>
+#include <mclib/protocol/packets/PacketHandler.h>
+#include <mclib/protocol/packets/PacketDispatcher.h>
 
-class StuckComponent : public Component, Minecraft::Packets::PacketHandler {
+class StuckComponent : public Component, mc::protocol::packets::PacketHandler {
 public:
     static const char* name;
 
-    Vector3d m_MaxAcceleration;
+    mc::Vector3d m_MaxAcceleration;
     s64 m_LastReset;
     s64 m_Corrections;
     s64 m_Threshold;
 
 public:
-    StuckComponent(Minecraft::Packets::PacketDispatcher* dispatcher, Vector3d maxAcceleration, s64 threshold)
-        : Minecraft::Packets::PacketHandler(dispatcher), 
+    StuckComponent(mc::protocol::packets::PacketDispatcher* dispatcher, mc::Vector3d maxAcceleration, s64 threshold)
+        : mc::protocol::packets::PacketHandler(dispatcher),
         m_MaxAcceleration(maxAcceleration),
         m_LastReset(0), 
         m_Corrections(0),
         m_Threshold(threshold)
     {
-        dispatcher->RegisterHandler(Minecraft::Protocol::State::Play, Minecraft::Protocol::Play::PlayerPositionAndLook, this);
+        dispatcher->RegisterHandler(mc::protocol::State::Play, mc::protocol::play::PlayerPositionAndLook, this);
     }
 
     ~StuckComponent() {
@@ -31,7 +31,7 @@ public:
     }
 
     void Update(double dt);
-    void HandlePacket(Minecraft::Packets::Inbound::PlayerPositionAndLookPacket* packet) override;
+    void HandlePacket(mc::protocol::packets::in::PlayerPositionAndLookPacket* packet) override;
 
     const char* GetName() const { return name; }
 };

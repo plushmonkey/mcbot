@@ -22,7 +22,7 @@ void ChiBot::RegisterComponents(BotUpdate* update) {
     auto targeting = std::make_shared<TargetingComponent>();
     update->AddComponent(targeting);
 
-    auto stuck = std::make_shared<StuckComponent>(client->GetDispatcher(), Vector3d(100, 0, 100), 5);
+    auto stuck = std::make_shared<StuckComponent>(client->GetDispatcher(), mc::Vector3d(100, 0, 100), 5);
     update->AddComponent(stuck);
 
     auto effect = std::make_shared<EffectComponent>(client->GetDispatcher());

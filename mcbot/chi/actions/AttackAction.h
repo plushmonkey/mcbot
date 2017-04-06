@@ -23,7 +23,7 @@ public:
 
     void Act() override;
 
-    virtual bool Attack(Minecraft::EntityPtr entity) = 0;
+    virtual bool Attack(mc::entity::EntityPtr entity) = 0;
 };
 
 class MeleeAction : public AttackAction {
@@ -37,7 +37,7 @@ public:
 
     }
 
-    virtual bool Attack(Minecraft::EntityPtr entity);
+    virtual bool Attack(mc::entity::EntityPtr entity);
 };
 
 #endif

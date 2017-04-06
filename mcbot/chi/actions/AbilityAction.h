@@ -23,7 +23,7 @@ public:
 
     }
 
-    bool Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(mc::entity::EntityPtr entity) override;
 };
 
 class LungeAction : public MeleeAction {
@@ -36,7 +36,7 @@ public:
 
     bool ShouldUse();
 
-    bool Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(mc::entity::EntityPtr entity) override;
 };
 
 class StanceAction : public MeleeAction {
@@ -57,19 +57,19 @@ public:
 
     bool ShouldUse();
 
-    bool Attack(Minecraft::EntityPtr entity) override;
+    bool Attack(mc::entity::EntityPtr entity) override;
 };
 
 class JoinArenaAction : public DecisionAction {
 private:
     GameClient* m_Client;
-    Vector3i m_SignPosition;
-    Vector3i m_StandPosition;
+    mc::Vector3i m_SignPosition;
+    mc::Vector3i m_StandPosition;
     bool m_FoundSign;
     s64 m_LastClick;
     bool m_MysticEmpire;
 
-    Vector3d GetSignNormal();
+    mc::Vector3d GetSignNormal();
 
     bool FindSign();
 

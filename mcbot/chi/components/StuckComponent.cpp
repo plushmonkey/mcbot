@@ -26,15 +26,15 @@ void StuckComponent::Update(double dt) {
     }
 }
 
-void StuckComponent::HandlePacket(Minecraft::Packets::Inbound::PlayerPositionAndLookPacket* packet) {
+void StuckComponent::HandlePacket(mc::protocol::packets::in::PlayerPositionAndLookPacket* packet) {
     m_Corrections++;
     if (m_Corrections >= m_Threshold) {
         auto physics = GetActorComponent(m_Owner, PhysicsComponent);
         if (physics) {
-            double x = m_MaxAcceleration.x * randomBinomial(engine);
-            double z = m_MaxAcceleration.z * randomBinomial(engine);
+            double x = m_MaxAcceleration.x * RandomBinomial(engine);
+            double z = m_MaxAcceleration.z * RandomBinomial(engine);
 
-            physics->ApplyAcceleration(Vector3d(x, 0, z));
+            physics->ApplyAcceleration(mc::Vector3d(x, 0, z));
         }
     }
 }

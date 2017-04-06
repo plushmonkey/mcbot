@@ -5,6 +5,9 @@
 #include "../../components/TargetingComponent.h"
 #include "../../components/EffectComponent.h"
 
+using mc::Vector3d;
+using mc::Vector3i;
+
 bool BackstabAction::CanAttack() {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
     auto targeting = GetActorComponent(m_Client, TargetingComponent);
@@ -22,14 +25,14 @@ bool BackstabAction::CanAttack() {
     return false;
 }
 
-bool SwiftKickAction::Attack(Minecraft::EntityPtr entity) {
+bool SwiftKickAction::Attack(mc::entity::EntityPtr entity) {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
     Vector3d pos = physics->GetPosition();
     Vector3d newPos = pos + Vector3d(0, 1.5, 0);
     physics->SetPosition(newPos);
 
     // Jump up one block before attacking so the bot is in the air for swift kick
-    Minecraft::Packets::Outbound::PlayerPositionAndLookPacket positionPacket(newPos,
+    mc::protocol::packets::out::PlayerPositionAndLookPacket positionPacket(newPos,
         (float)physics->GetOrientation() * 180.0f / 3.14159f, 0.0f, false);
     m_Client->GetConnection()->SendPacket(&positionPacket);
 
@@ -56,9 +59,9 @@ bool LungeAction::ShouldUse() {
     return false;
 }
 
-bool LungeAction::Attack(Minecraft::EntityPtr entity) {
-    using namespace Minecraft::Packets::Outbound;
-    AnimationPacket animationPacket(Minecraft::Hand::Main);
+bool LungeAction::Attack(mc::entity::EntityPtr entity) {
+    using namespace mc::protocol::packets::out;
+    AnimationPacket animationPacket(mc::Hand::Main);
     m_Client->GetConnection()->SendPacket(&animationPacket);
     return true;
 }
@@ -82,8 +85,8 @@ bool StanceAction::ShouldUse() {
     return true;
 }
 
-bool StanceAction::Attack(Minecraft::EntityPtr entity) {
-    using namespace Minecraft::Packets::Outbound;
+bool StanceAction::Attack(mc::entity::EntityPtr entity) {
+    using namespace mc::protocol::packets::out;
 
     s64 time = util::GetTime();
 
@@ -93,7 +96,7 @@ bool StanceAction::Attack(Minecraft::EntityPtr entity) {
     if (canAttack) {
         m_ActivationTime = 0;
 
-        AnimationPacket animationPacket(Minecraft::Hand::Main);
+        AnimationPacket animationPacket(mc::Hand::Main);
         m_Client->GetConnection()->SendPacket(&animationPacket);
     }
 
@@ -101,7 +104,7 @@ bool StanceAction::Attack(Minecraft::EntityPtr entity) {
 }
 
 Vector3d JoinArenaAction::GetSignNormal() {
-    Minecraft::BlockState bState = m_Client->GetWorld()->GetBlock(m_SignPosition);
+    mc::block::BlockState bState = m_Client->GetWorld()->GetBlock(m_SignPosition);
     float angle = 0.0f;
 
     if (bState.GetBlock()->GetName().compare(L"Standing Sign Block") == 0) {
@@ -147,12 +150,12 @@ bool JoinArenaAction::FindSign() {
         std::cout << "Found sign at " << m_SignPosition << " when bot at " << physics->GetPosition() << " StandPosition: " << m_StandPosition << std::endl;
         return true;
     } else {
-        std::vector<Minecraft::BlockEntityPtr> blockEntities = m_Client->GetWorld()->GetBlockEntities();
+        std::vector<mc::block::BlockEntityPtr> blockEntities = m_Client->GetWorld()->GetBlockEntities();
 
-        for (Minecraft::BlockEntityPtr blockEntity : blockEntities) {
-            if (blockEntity->GetType() != Minecraft::BlockEntityType::Sign) continue;
+        for (mc::block::BlockEntityPtr blockEntity : blockEntities) {
+            if (blockEntity->GetType() != mc::block::BlockEntityType::Sign) continue;
 
-            std::shared_ptr<Minecraft::SignBlockEntity> sign = std::static_pointer_cast<Minecraft::SignBlockEntity>(blockEntity);
+            std::shared_ptr<mc::block::SignBlockEntity> sign = std::static_pointer_cast<mc::block::SignBlockEntity>(blockEntity);
 
             for (std::size_t i = 0; i < 4; ++i) {
                 std::wstring text = sign->GetText(i);
@@ -215,10 +218,10 @@ void JoinArenaAction::Act() {
         s64 time = util::GetTime();
 
         if (time >= m_LastClick + 2000) {
-            using namespace Minecraft::Packets::Outbound;
+            using namespace mc::protocol::packets::out;
             std::cout << "Sending sign click" << std::endl;
 
-            PlayerBlockPlacementPacket packet(m_SignPosition, 4, Minecraft::Hand::Main, Vector3f(0.5f, 0.0f, 0.5f));
+            PlayerBlockPlacementPacket packet(m_SignPosition, 4, mc::Hand::Main, mc::Vector3f(0.5f, 0.0f, 0.5f));
             m_Client->GetConnection()->SendPacket(&packet);
             m_LastClick = time;
         }
@@ -226,7 +229,7 @@ void JoinArenaAction::Act() {
 }
 
 void FindTargetAction::Act()  {
-    std::vector<Minecraft::PlayerPtr> players;
+    std::vector<mc::core::PlayerPtr> players;
 
     auto pm = m_Client->GetPlayerManager();
     for (auto iter = pm->begin(); iter != pm->end(); ++iter)
@@ -244,13 +247,13 @@ void FindTargetAction::Act()  {
     }
 
     double closestDist = std::numeric_limits<double>::max();
-    Minecraft::PlayerPtr closestPlayer;
+    mc::core::PlayerPtr closestPlayer;
 
     Vector3d position = physics->GetPosition();
 
     auto playerEntity = m_Client->GetEntityManager()->GetPlayerEntity();
 
-    for (Minecraft::PlayerPtr player : players) {
+    for (mc::core::PlayerPtr player : players) {
         auto entity = player->GetEntity();
         if (!entity || entity == playerEntity) continue;
 
@@ -280,7 +283,7 @@ double FindTargetAction::DistanceToTarget() {
     auto targeting = GetActorComponent(m_Client, TargetingComponent);
     if (!targeting) return std::numeric_limits<double>::max();;
 
-    Minecraft::PlayerPtr target = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
+    mc::core::PlayerPtr target = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
     if (!target || !target->GetEntity()) return std::numeric_limits<double>::max();
 
     Vector3d toTarget = target->GetEntity()->GetPosition() - physics->GetPosition();

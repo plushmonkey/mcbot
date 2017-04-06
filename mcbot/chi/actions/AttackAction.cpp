@@ -3,10 +3,14 @@
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TargetingComponent.h"
 
+using mc::Vector3d;
+using mc::Vector3i;
+using mc::ToVector3i;
+
 bool AttackAction::SelectItem(s32 id) {
     std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
 
-    Minecraft::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+    mc::inventory::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
 
     if (!slot || slot->GetItemId() != id) {
         s32 itemIndex = inventory->FindItemById(id);
@@ -31,7 +35,7 @@ bool AttackAction::CanAttack() {
 
     auto targeting = GetActorComponent(m_Client, TargetingComponent);
 
-    Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
+    mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
     if (!targetPlayer) return false;
 
     auto entity = targetPlayer->GetEntity();
@@ -53,7 +57,7 @@ bool AttackAction::CanAttack() {
 void AttackAction::Act() {
     auto targeting = GetActorComponent(m_Client, TargetingComponent);
 
-    Minecraft::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
+    mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
     if (!targetPlayer) return;
 
     auto entity = targetPlayer->GetEntity();
@@ -77,7 +81,7 @@ s64 AttackAction::s_LastGlobalAttack = 0;
 s64 AttackAction::s_GlobalAttackCooldown = 600;
 
 
-bool MeleeAction::Attack(Minecraft::EntityPtr entity) {
+bool MeleeAction::Attack(mc::entity::EntityPtr entity) {
     auto physics = GetActorComponent(m_Client, PhysicsComponent);
 
     Vector3d botPos = physics->GetPosition();
@@ -85,14 +89,14 @@ bool MeleeAction::Attack(Minecraft::EntityPtr entity) {
 
     if ((targetPos - botPos).LengthSq() > AttackRangeSq) return false;
 
-    using namespace Minecraft::Packets::Outbound;
+    using namespace mc::protocol::packets::out;
 
     // Send attack
     UseEntityPacket useEntityPacket(entity->GetEntityId(), UseEntityPacket::Action::Attack);
     m_Client->GetConnection()->SendPacket(&useEntityPacket);
 
     // Send arm swing
-    AnimationPacket animationPacket(Minecraft::Hand::Main);
+    AnimationPacket animationPacket(mc::Hand::Main);
     m_Client->GetConnection()->SendPacket(&animationPacket);
 
     return true;
