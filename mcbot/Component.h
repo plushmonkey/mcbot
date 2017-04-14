@@ -9,16 +9,22 @@ typedef std::size_t ComponentId;
 
 class Actor;
 
-#define GetActorComponent(actor, type) actor->GetComponent<type>(type::name).lock()
+#define GetActorComponent(actor, type) actor->GetComponent<type>(type::name)
 
 class Component {
 protected:
     Actor* m_Owner;
 
 public:
+    Component() = default;
     virtual ~Component() { }
 
-    void SetOwner(Actor* owner) { m_Owner = owner; }
+    Component(const Component& rhs) = delete;
+    Component& operator=(const Component& rhs) = delete;
+    Component(Component&& rhs) = delete;
+    Component& operator=(Component&& rhs) = delete;
+
+    void SetOwner(Actor* owner) noexcept { m_Owner = owner; }
     
     virtual void Update(double dt) { }
     ComponentId GetId() const { return GetIdFromName(GetName()); }
@@ -28,7 +34,5 @@ public:
         return std::hash<std::string>()(name);
     }
 };
-
-typedef std::shared_ptr<Component> ComponentPtr;
 
 #endif

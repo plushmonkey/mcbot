@@ -20,7 +20,7 @@ Vector3i GetGroundLevel(mc::world::World* world, Vector3i pos) {
     return Vector3i(pos.x, y + 1, pos.z);
 }
 
-CastResult RayCast(mc::world::World* world, std::shared_ptr<WorldGraph> graph, const Vector3d& from, Vector3d direction, std::size_t length) {
+CastResult RayCast(mc::world::World* world, WorldGraph* graph, const Vector3d& from, Vector3d direction, std::size_t length) {
     CastResult result;
 
     std::vector<Vector3i> hit(length);

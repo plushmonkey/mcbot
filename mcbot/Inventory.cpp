@@ -51,21 +51,22 @@ InventoryManager::~InventoryManager() {
     GetDispatcher()->UnregisterHandler(this);
 }
 
-std::shared_ptr<Inventory> InventoryManager::GetInventory(s32 windowId) {
+Inventory* InventoryManager::GetInventory(s32 windowId) {
     auto iter = m_Inventories.find(windowId);
     if (iter == m_Inventories.end()) return nullptr;
-    return iter->second;
+    return iter->second.get();
 }
 
 void InventoryManager::SetSlot(s32 windowId, s32 slotIndex, const mc::inventory::Slot& slot) {
     auto iter = m_Inventories.find(windowId);
 
-    std::shared_ptr<Inventory> inventory;
+    Inventory* inventory = nullptr;
     if (iter == m_Inventories.end()) {
-        inventory = std::make_shared<Inventory>(m_Connection, windowId);
-        m_Inventories[windowId] = inventory;
+        auto newInventory = std::make_unique<Inventory>(m_Connection, windowId);
+        inventory = newInventory.get();
+        m_Inventories[windowId] = std::move(newInventory);
     } else {
-        inventory = iter->second;
+        inventory = iter->second.get();
     }
 
     inventory->m_Inventory[slotIndex] = slot;
@@ -87,9 +88,9 @@ void InventoryManager::HandlePacket(mc::protocol::packets::in::HeldItemChangePac
     auto iter = m_Inventories.find(Inventory::PLAYER_INVENTORY_ID);
 
     if (iter == m_Inventories.end()) {
-        auto inventory = std::make_shared<Inventory>(m_Connection, Inventory::PLAYER_INVENTORY_ID);
+        auto inventory = std::make_unique<Inventory>(m_Connection, Inventory::PLAYER_INVENTORY_ID);
 
-        iter = m_Inventories.insert(std::make_pair(Inventory::PLAYER_INVENTORY_ID, inventory)).first;
+        iter = m_Inventories.insert(std::make_pair(Inventory::PLAYER_INVENTORY_ID, std::move(inventory))).first;
     }
 
     iter->second->SelectHotbarSlot(packet->GetSlot());

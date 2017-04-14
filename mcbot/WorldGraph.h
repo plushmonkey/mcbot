@@ -12,7 +12,7 @@ class PhysicsComponent;
 class WorldGraph : public ai::path::Graph, public mc::world::WorldListener {
 private:
     struct ChunkTaskComparator {
-        static std::shared_ptr<PhysicsComponent> physics;
+        static PhysicsComponent* physics;
 
         bool operator()(mc::Vector3i first, mc::Vector3i second);
     };

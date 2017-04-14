@@ -17,7 +17,7 @@ private:
     mc::core::PlayerManager m_PlayerManager;
     mc::world::World m_World;
     InventoryManager m_Inventories;
-    std::shared_ptr<WorldGraph> m_Graph;
+    std::unique_ptr<WorldGraph> m_Graph;
 
     bool m_Connected;
 
@@ -37,8 +37,8 @@ public:
     mc::world::World* GetWorld() { return &m_World; }
     InventoryManager* GetInventories() { return &m_Inventories; }
 
-    std::shared_ptr<Inventory> GetInventory() { return m_Inventories.GetInventory(0); }
-    std::shared_ptr<WorldGraph> GetGraph() { return m_Graph; }
+    Inventory* GetInventory() { return m_Inventories.GetInventory(0); }
+    WorldGraph* GetGraph() { return m_Graph.get(); }
 };
 
 #endif

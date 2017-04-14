@@ -68,7 +68,7 @@ void GameClient::run() {
         }
 
 #ifdef _DEBUG
-        if (util::GetTime() < startupTime + 30000) continue;
+        if (util::GetTime() < startupTime + 10000) continue;
 #endif
 
         m_Graph->ProcessQueue();

@@ -35,7 +35,7 @@ public:
 class InventoryManager : public mc::protocol::packets::PacketHandler {
 private:
     mc::core::Connection* m_Connection;
-    std::map<s32, std::shared_ptr<Inventory>> m_Inventories;
+    std::map<s32, std::unique_ptr<Inventory>> m_Inventories;
 
     void SetSlot(s32 windowId, s32 slotIndex, const mc::inventory::Slot& slot);
 
@@ -47,7 +47,7 @@ public:
     void HandlePacket(mc::protocol::packets::in::WindowItemsPacket* packet);
     void HandlePacket(mc::protocol::packets::in::HeldItemChangePacket* packet);
 
-    std::shared_ptr<Inventory> GetInventory(s32 windowId);
+    Inventory* GetInventory(s32 windowId);
 };
 
 #endif

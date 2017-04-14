@@ -12,20 +12,20 @@ BotUpdate::BotUpdate(GameClient* client)
 {
     client->RegisterListener(this);
 
-    auto sync = std::make_shared<SynchronizationComponent>(client->GetDispatcher(), client->GetConnection(), client->GetPlayerManager());
-    AddComponent(sync);
+    auto sync = std::make_unique<SynchronizationComponent>(client->GetDispatcher(), client->GetConnection(), client->GetPlayerManager());
+    AddComponent(std::move(sync));
 
-    auto physics = std::make_shared<PhysicsComponent>(client->GetWorld(), mc::AABB(Vector3d(-0.3, 0.0, -0.3), Vector3d(0.3, 1.8, 0.3)));
+    auto physics = std::make_unique<PhysicsComponent>(client->GetWorld(), mc::AABB(Vector3d(-0.3, 0.0, -0.3), Vector3d(0.3, 1.8, 0.3)));
     physics->SetMaxAcceleration(100.0f);
     physics->SetMaxRotation(3.14159 * 8);
-    AddComponent(physics);
+    AddComponent(std::move(physics));
 
-    auto speed = std::make_shared<SpeedComponent>(client->GetConnection(), client->GetWorld());
+    auto speed = std::make_unique<SpeedComponent>(client->GetConnection(), client->GetWorld());
     speed->SetMovementType(SpeedComponent::Movement::Normal);
-    AddComponent(speed);
+    AddComponent(std::move(speed));
 
     m_StartupTime = util::GetTime();
-    m_Pathfinder = std::make_shared<Pathfinder>(m_Client);
+    m_Pathfinder = std::make_unique<Pathfinder>(m_Client);
 }
 
 BotUpdate::~BotUpdate() {
@@ -35,12 +35,12 @@ BotUpdate::~BotUpdate() {
     m_Client->UnregisterListener(this);
 }
 
-void BotUpdate::AddComponent(ComponentPtr component) {
+void BotUpdate::AddComponent(std::unique_ptr<Component> component) {
     component->SetOwner(m_Client);
-    m_Client->AddComponent(component);
+    m_Client->AddComponent(std::move(component));
 }
 
-void BotUpdate::SetDecisionTree(DecisionTreeNodePtr tree) {
+void BotUpdate::SetDecisionTree(DecisionTreeNodePtr tree) noexcept {
     m_DecisionTree = tree;
 }
 

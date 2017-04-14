@@ -11,7 +11,7 @@ using mc::Vector3d;
 using mc::Vector3i;
 using mc::ToVector3i;
 
-std::shared_ptr<PhysicsComponent> WorldGraph::ChunkTaskComparator::physics = nullptr;
+PhysicsComponent* WorldGraph::ChunkTaskComparator::physics = nullptr;
 
 // Prioritize chunks whose y value is closest to the player's y value.
 bool WorldGraph::ChunkTaskComparator::operator()(Vector3i first, Vector3i second) {
@@ -27,14 +27,6 @@ bool WorldGraph::ChunkTaskComparator::operator()(Vector3i first, Vector3i second
     double valSecond = Hadamard(ToVector3d(playerChunk - second), weights).LengthSq();
 
     return valFirst > valSecond;
-
-    /*
-    s32 yIndex = (s32)physics->GetPosition().y / 16;
-
-    s32 firstDiff = std::abs(yIndex - (s32)first.y);
-    s32 secondDiff = std::abs(yIndex - (s32)second.y);
-
-    return firstDiff > secondDiff;*/
 }
 
 ai::path::Node* WorldGraph::GetNode(Vector3i pos) {
@@ -287,7 +279,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessChunk(mc::world::ChunkPtr chunk
     mc::world::World* world = m_Client->GetWorld();
     std::vector<Link> links;
     
-    std::shared_ptr<PhysicsComponent> physics = GetActorComponent(m_Client, PhysicsComponent);
+    auto physics = GetActorComponent(m_Client, PhysicsComponent);
     if (physics == nullptr) return links;
     Vector3i position = ToVector3i(physics->GetPosition());
 

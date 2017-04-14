@@ -45,7 +45,9 @@ protected:
     s64 m_LastAttack;
 
     bool SelectItem(s32 id) {
-        std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
+        Inventory* inventory = m_Client->GetInventory();
+
+        if (!inventory) return false;
 
         mc::inventory::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
 
@@ -151,14 +153,14 @@ public:
 void CreateBot(BotUpdate* update) {
     GameClient* client = update->GetClient();
 
-    auto effectComponent = std::make_shared<EffectComponent>(client->GetDispatcher());
-    update->AddComponent(effectComponent);
+    auto effectComponent = std::make_unique<EffectComponent>(client->GetDispatcher());
+    update->AddComponent(std::move(effectComponent));
 
-    auto jump = std::make_shared<JumpComponent>(client->GetWorld(), 200);
-    update->AddComponent(jump);
+    auto jump = std::make_unique<JumpComponent>(client->GetWorld(), 200);
+    update->AddComponent(std::move(jump));
 
-    auto targeting = std::make_shared<TargetingComponent>();
-    update->AddComponent(targeting);
+    auto targeting = std::make_unique<TargetingComponent>();
+    update->AddComponent(std::move(targeting));
 
     auto targetPlayer = std::make_shared<TargetPlayerAction>(client);
 
