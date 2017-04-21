@@ -45,13 +45,14 @@ protected:
     s64 m_LastAttack;
 
     bool SelectItem(s32 id) {
-        Inventory* inventory = m_Client->GetInventory();
+        mc::inventory::Inventory* inventory = m_Client->GetInventory();
 
         if (!inventory) return false;
 
-        mc::inventory::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+        auto& hotbar = m_Client->GetHotbar();
+        auto slot = hotbar.GetCurrentItem();
 
-        if (!slot || slot->GetItemId() != id) {
+        if (slot.GetItemId() != id) {
             s32 itemIndex = inventory->FindItemById(id);
 
             std::cout << "Selecting item id " << id << std::endl;
@@ -62,8 +63,9 @@ protected:
                 std::cout << "Item is in index " << itemIndex << std::endl;
             }
 
-            s32 hotbarIndex = itemIndex - Inventory::HOTBAR_SLOT_START;
-            m_Client->GetInventory()->SelectHotbarSlot(hotbarIndex);
+            s32 hotbarIndex = itemIndex - mc::inventory::Inventory::HOTBAR_SLOT_START;
+            if (hotbarIndex >= 0)
+                hotbar.SelectSlot(hotbarIndex);
         }
 
         return true;

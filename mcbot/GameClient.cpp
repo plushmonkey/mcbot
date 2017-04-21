@@ -15,7 +15,8 @@ GameClient::GameClient()
     m_World(&m_Dispatcher),
     m_Inventories(&m_Dispatcher, &m_Connection),
     m_Graph(new WorldGraph(this)),
-    m_Connected(false)
+    m_Connected(false),
+    m_Hotbar(&m_Dispatcher, &m_Connection, &m_Inventories)
 {
     m_Connection.RegisterListener(this);
 }
