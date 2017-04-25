@@ -128,13 +128,13 @@ public:
 
         SelectItem(StoneSwordId);
 
-        // Send arm swing
-        AnimationPacket animationPacket(mc::Hand::Main);
-        m_Client->GetConnection()->SendPacket(&animationPacket);
-
         // Send attack
         UseEntityPacket useEntityPacket(entity->GetEntityId(), UseEntityPacket::Action::Attack);
         m_Client->GetConnection()->SendPacket(&useEntityPacket);
+
+        // Send arm swing
+        AnimationPacket animationPacket(mc::Hand::Main);
+        m_Client->GetConnection()->SendPacket(&animationPacket);
     }
 
     double DistanceToTarget() {

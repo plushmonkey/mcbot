@@ -79,10 +79,7 @@ PlanningNode::PlanningNode(PlanningNode* prev, Node* node, Node* goal)
 }
 
 AStar::~AStar() {
-    for (auto& pair : m_NodeMap) {
-        delete pair.second;
-    }
-    m_NodeMap.clear();
+
 }
 
 std::shared_ptr<Plan> AStar::operator()(Node* start, Node* goal) {
@@ -112,20 +109,20 @@ std::shared_ptr<Plan> AStar::operator()(Node* start, Node* goal) {
         for (Node* neighbor : neighbors) {
             auto find = m_NodeMap.find(neighbor);
 
-            if (find != m_NodeMap.end() && find->second->IsClosed())
+            if (find != m_NodeMap.end() && find->second.IsClosed())
                 continue;
 
             float cost = node->GetGoalCost() + neighbor->GetCostFrom(node->GetNode());
 
-            PlanningNode* planNode = nullptr;
-            if (find != m_NodeMap.end())
-                planNode = find->second;
+            if (find != m_NodeMap.end()) {
+                PlanningNode planNode = find->second;
 
-            if (!planNode) {
-                planNode = AddToOpenSet(neighbor, node);
-            } else if (cost < planNode->GetGoalCost()) {
-                planNode->SetPrevious(node);
-                m_OpenSet.Update();
+                if (cost < planNode.GetGoalCost()) {
+                    planNode.SetPrevious(node);
+                    m_OpenSet.Update();
+                }
+            } else {
+                AddToOpenSet(neighbor, node);
             }
         }
     }
@@ -149,22 +146,16 @@ std::shared_ptr<Plan> AStar::BuildPath(PlanningNode* goal) {
     return plan;
 }
 
-PlanningNode* AStar::AddToOpenSet(Node* node, PlanningNode* prev) {
-    PlanningNode *planNode = nullptr;
-
+void AStar::AddToOpenSet(Node* node, PlanningNode* prev) {
     auto iter = m_NodeMap.find(node);
     if (iter == m_NodeMap.end()) {
-        planNode = new PlanningNode(prev, node, m_Goal);
-        m_NodeMap.insert(std::make_pair(node, planNode));
+        m_NodeMap.insert(std::make_pair(node, PlanningNode(prev, node, m_Goal)));
 
-        m_OpenSet.Push(planNode);
+        m_OpenSet.Push(&m_NodeMap.at(node));
     } else {
-        planNode = iter->second;
-        planNode->SetClosed(false);
+        iter->second.SetClosed(false);
         m_OpenSet.Update();
     }
-    
-    return planNode;
 }
 
 Graph::~Graph() {
