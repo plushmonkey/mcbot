@@ -5,6 +5,7 @@
 #include "components/SpeedComponent.h"
 #include "components/TargetingComponent.h"
 #include "actions/WanderAction.h"
+#include "VersionDetector.h"
 
 using mc::Vector3d;
 using mc::Vector3i;
@@ -187,13 +188,20 @@ void CleanupBot(BotUpdate* update) {
 }
 
 int main(void) {
+    const std::string server = "127.0.0.1";
+    const u16 port = 25565;
+
     mc::block::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
-    GameClient game;
+    VersionDetector versionDetector(server, port);
+
+    auto version = versionDetector.GetVersion();
+
+    GameClient game(version);
     BotUpdate update(&game);
 
     CreateBot(&update);
 
-    game.login("127.0.0.1", 25565, "bot", "pw");
+    game.login(server, port, "bot", "pw");
     
     game.run();
 

@@ -24,7 +24,7 @@ private:
     bool m_Connected;
 
 public:
-    GameClient();
+    GameClient(mc::protocol::Version version = mc::protocol::Version::Minecraft_1_11_2);
     ~GameClient();
 
     void OnSocketStateChange(mc::network::Socket::Status newState);

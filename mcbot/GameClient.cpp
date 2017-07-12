@@ -7,9 +7,9 @@
 #include "Utility.h"
 #include "WorldGraph.h"
 
-GameClient::GameClient()
+GameClient::GameClient(mc::protocol::Version version)
     : m_Dispatcher(),
-    m_Connection(&m_Dispatcher),
+    m_Connection(&m_Dispatcher, version),
     m_EntityManager(&m_Dispatcher),
     m_PlayerManager(&m_Dispatcher, &m_EntityManager),
     m_World(&m_Dispatcher),
