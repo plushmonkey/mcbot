@@ -48,12 +48,6 @@ void BotUpdate::OnTick() {
     auto sync = GetActorComponent(m_Client, SynchronizationComponent);
     if (!sync || !sync->HasSpawned()) return;
 
-    auto speed = GetActorComponent(m_Client, SpeedComponent);
-    if (speed) {
-        if (speed->GetMovementType() != SpeedComponent::Movement::Sprinting)
-            speed->SetMovementType(SpeedComponent::Movement::Sprinting);
-    }
-
     if (!m_DecisionTree) {
         std::cerr << "No decision tree" << std::endl;
         return;

@@ -5,12 +5,23 @@
 #include "components/SpeedComponent.h"
 #include "components/TargetingComponent.h"
 #include "actions/WanderAction.h"
-#include "VersionDetector.h"
+#include <mclib/util/VersionFetcher.h>
 
 using mc::Vector3d;
 using mc::Vector3i;
 using mc::ToVector3d;
 using mc::ToVector3i;
+
+namespace {
+
+const std::string name = "bot";
+const std::string password = "pw";
+const std::string server = "127.0.0.1";
+const u16 port = 25565;
+
+const std::wstring TargetPlayer = L"plushmonkey";
+
+} // ns
 
 class TargetPlayerAction : public DecisionAction {
 private:
@@ -20,7 +31,7 @@ public:
     TargetPlayerAction(GameClient* client) : m_Client(client) { }
 
     bool HasTarget() {
-        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(TargetPlayer);
         if (!targetPlayer) return false;
 
         mc::entity::EntityPtr entity = targetPlayer->GetEntity();
@@ -28,7 +39,7 @@ public:
     }
 
     void Act() override {
-        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(TargetPlayer);
         auto entity = targetPlayer->GetEntity();
 
         auto targeting = GetActorComponent(m_Client, TargetingComponent);
@@ -76,7 +87,7 @@ public:
     AttackAction(GameClient* client, s64 attackCooldown) : m_Client(client), m_LastAttack(0), m_AttackCooldown(attackCooldown) { }
 
     void Act() override {
-        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(TargetPlayer);
         auto entity = targetPlayer->GetEntity();
         auto physics = GetActorComponent(m_Client, PhysicsComponent);
         auto targeting = GetActorComponent(m_Client, TargetingComponent);
@@ -139,7 +150,7 @@ public:
     }
 
     double DistanceToTarget() {
-        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(L"plushmonkey");
+        mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByName(TargetPlayer);
 
         if (targetPlayer) {
             mc::entity::EntityPtr entity = targetPlayer->GetEntity();
@@ -188,20 +199,17 @@ void CleanupBot(BotUpdate* update) {
 }
 
 int main(void) {
-    const std::string server = "127.0.0.1";
-    const u16 port = 25565;
-
     mc::block::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
-    VersionDetector versionDetector(server, port);
+    mc::util::VersionFetcher versionFetcher(server, port);
 
-    auto version = versionDetector.GetVersion();
+    auto version = versionFetcher.GetVersion();
 
     GameClient game(version);
     BotUpdate update(&game);
 
     CreateBot(&update);
 
-    game.login(server, port, "bot", "pw");
+    game.login(server, port, name, password);
     
     game.run();
 

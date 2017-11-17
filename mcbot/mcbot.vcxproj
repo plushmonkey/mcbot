@@ -133,7 +133,6 @@
     <ClCompile Include="PlayerList.cpp" />
     <ClCompile Include="Steering.cpp" />
     <ClCompile Include="Utility.cpp" />
-    <ClCompile Include="VersionDetector.cpp" />
     <ClCompile Include="WorldGraph.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,7 +155,6 @@
     <ClInclude Include="PlayerList.h" />
     <ClInclude Include="Steering.h" />
     <ClInclude Include="Utility.h" />
-    <ClInclude Include="VersionDetector.h" />
     <ClInclude Include="WorldGraph.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
