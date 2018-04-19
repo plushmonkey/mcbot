@@ -15,7 +15,7 @@ struct CastResult {
     bool full;
 };
 
-CastResult RayCast(mc::world::World* world, std::shared_ptr<WorldGraph> graph, const mc::Vector3d& from, mc::Vector3d direction, std::size_t length);
+CastResult RayCast(mc::world::World* world, WorldGraph* graph, const mc::Vector3d& from, mc::Vector3d direction, std::size_t length);
 
 class Pathfinder {
 private:

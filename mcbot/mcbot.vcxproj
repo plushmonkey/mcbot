@@ -131,7 +131,6 @@
     <ClCompile Include="components\SynchronizationComponent.cpp" />
     <ClCompile Include="components\TargetingComponent.cpp" />
     <ClCompile Include="GameClient.cpp" />
-    <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathfinder.cpp" />
     <ClCompile Include="Pathing.cpp" />
@@ -158,7 +157,6 @@
     <ClInclude Include="components\TargetingComponent.h" />
     <ClInclude Include="Decision.h" />
     <ClInclude Include="GameClient.h" />
-    <ClInclude Include="Inventory.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Pathfinder.h" />
     <ClInclude Include="Pathing.h" />

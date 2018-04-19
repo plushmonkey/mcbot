@@ -182,9 +182,6 @@ SteeringAcceleration PathFollowSteering::GetSteering() {
     if (physics == nullptr) return SteeringAcceleration();
 
     // todo: find closest position on continuous path and follow that instead
-
-    double TargetRadiusSq = 0.5 * 0.5;
-
     if (!m_Plan) return SteeringAcceleration();
 
     path::Node* current = m_Plan->GetCurrent();
@@ -199,8 +196,8 @@ SteeringAcceleration PathFollowSteering::GetSteering() {
 
     Vector3d pos = physics->GetPosition();
     Vector3i tar = current->GetPosition();
-
-    if (pos.y < tar.y) {
+    
+    if (pos.y < tar.y && std::abs(pos.y - tar.y) >= 0.25) {
         auto jump = GetActorComponent(m_Player, JumpComponent);
         if (jump) {
             jump->Jump();

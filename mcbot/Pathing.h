@@ -172,11 +172,11 @@ struct PlanningNodeComparator {
 
 class AStar {
 private:
-    std::unordered_map<Node*, PlanningNode*> m_NodeMap;
+    std::unordered_map<Node*, PlanningNode> m_NodeMap;
     PriorityQueue<PlanningNode*, PlanningNodeComparator> m_OpenSet;
     Node* m_Goal;
 
-    PlanningNode* AddToOpenSet(Node* node, PlanningNode* prev);
+    void AddToOpenSet(Node* node, PlanningNode* prev);
 
     // Backtrace path and reverse it to get finished plan
     std::shared_ptr<Plan> BuildPath(PlanningNode* goal);

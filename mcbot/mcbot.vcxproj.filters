@@ -54,9 +54,6 @@
     <ClCompile Include="Pathing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Inventory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="WorldGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -117,9 +114,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Pathing.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Inventory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WorldGraph.h">

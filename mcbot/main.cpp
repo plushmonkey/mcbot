@@ -49,9 +49,22 @@ public:
     }
 };
 
+void CleanupBot(BotUpdate* update) {
+    GameClient* client = update->GetClient();
+
+    client->RemoveComponent(Component::GetIdFromName(EffectComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(JumpComponent::name));
+    client->RemoveComponent(Component::GetIdFromName(TargetingComponent::name));
+}
+
+
 int main(void) {
     mc::block::BlockRegistry::GetInstance()->RegisterVanillaBlocks();
-    GameClient game;
+    mc::util::VersionFetcher versionFetcher(server, port);
+
+    auto version = versionFetcher.GetVersion();
+
+    GameClient game(version);
     BotUpdate update(&game);
     Logger logger(&game, game.GetDispatcher());
     

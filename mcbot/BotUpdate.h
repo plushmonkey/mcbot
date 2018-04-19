@@ -13,7 +13,7 @@ private:
     PlayerList m_Players;
     s64 m_StartupTime;
 
-    std::shared_ptr<Pathfinder> m_Pathfinder;
+    std::unique_ptr<Pathfinder> m_Pathfinder;
 
     DecisionTreeNodePtr m_DecisionTree;
 
@@ -21,12 +21,17 @@ public:
     BotUpdate(GameClient* client);
     ~BotUpdate();
 
-    GameClient* GetClient() { return m_Client; }
+    BotUpdate(const BotUpdate& rhs) = delete;
+    BotUpdate& operator=(const BotUpdate& rhs) = delete;
+    BotUpdate(BotUpdate&& rhs) = delete;
+    BotUpdate& operator=(BotUpdate&& rhs) = delete;
 
-    void OnTick();
+    GameClient* GetClient() noexcept { return m_Client; }
 
-    void AddComponent(ComponentPtr component);
-    void SetDecisionTree(DecisionTreeNodePtr tree);
+    void OnTick() override;
+
+    void AddComponent(std::unique_ptr<Component> component);
+    void SetDecisionTree(DecisionTreeNodePtr tree) noexcept;
 };
 
 #endif

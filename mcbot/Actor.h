@@ -1,41 +1,46 @@
 #ifndef MCBOT_ACTOR_H_
 #define MCBOT_ACTOR_H_
 
-
 #include "Component.h"
+
+#include <memory>
 
 class Actor {
 public:
-    typedef std::map<ComponentId, ComponentPtr> ActorComponents;
+    typedef std::map<ComponentId, std::unique_ptr<Component>> ActorComponents;
 
 private:
     ActorComponents m_Components;
 
 public:
+    Actor() = default;
     virtual ~Actor() { }
+
+    Actor(const Actor& rhs) = delete;
+    Actor& operator=(const Actor& rhs) = delete;
+    Actor(Actor&& rhs) = delete;
+    Actor& operator=(Actor&& rhs) = delete;
 
     void Update(double dt);
 
     template <class ComponentType>
-    std::weak_ptr<ComponentType> GetComponent(ComponentId id)
+    ComponentType* GetComponent(ComponentId id)
     {
         ActorComponents::iterator find = m_Components.find(id);
 
-        if (find == m_Components.end()) return std::weak_ptr<ComponentType>();
+        if (find == m_Components.end()) return nullptr;
 
-        ComponentPtr componentBase(find->second);
-        std::shared_ptr<ComponentType> component(std::static_pointer_cast<ComponentType>(componentBase));
-        return std::weak_ptr<ComponentType>(component);
+        return dynamic_cast<ComponentType*>(find->second.get());
     }
 
     template <class ComponentType>
-    std::weak_ptr<ComponentType> GetComponent(const char* name) {
+    ComponentType* GetComponent(const char* name) {
         ComponentId id = Component::GetIdFromName(name);
         return GetComponent<ComponentType>(id);
     }
 
     const ActorComponents& GetComponents() { return m_Components; }
-    void AddComponent(ComponentPtr component);
+    void AddComponent(std::unique_ptr<Component> component);
     void RemoveComponent(ComponentId id);
 };
 

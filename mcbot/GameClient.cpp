@@ -7,15 +7,16 @@
 #include "Utility.h"
 #include "WorldGraph.h"
 
-GameClient::GameClient()
+GameClient::GameClient(mc::protocol::Version version)
     : m_Dispatcher(),
-    m_Connection(&m_Dispatcher),
+    m_Connection(&m_Dispatcher, version),
     m_EntityManager(&m_Dispatcher),
     m_PlayerManager(&m_Dispatcher, &m_EntityManager),
     m_World(&m_Dispatcher),
     m_Inventories(&m_Dispatcher, &m_Connection),
     m_Graph(new WorldGraph(this)),
-    m_Connected(false)
+    m_Connected(false),
+    m_Hotbar(&m_Dispatcher, &m_Connection, &m_Inventories)
 {
     m_Connection.RegisterListener(this);
 }
@@ -68,7 +69,7 @@ void GameClient::run() {
         }
 
 #ifdef _DEBUG
-        if (util::GetTime() < startupTime + 30000) continue;
+        if (util::GetTime() < startupTime + 10000) continue;
 #endif
 
         m_Graph->ProcessQueue();

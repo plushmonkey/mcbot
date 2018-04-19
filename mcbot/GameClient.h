@@ -1,7 +1,8 @@
 #ifndef GAME_CLIENT_H_
 #define GAME_CLIENT_H_
 
-#include "Inventory.h"
+#include <mclib/inventory/Inventory.h>
+#include <mclib/inventory/Hotbar.h>
 #include "Steering.h"
 #include "Actor.h"
 
@@ -16,13 +17,14 @@ private:
     mc::entity::EntityManager m_EntityManager;
     mc::core::PlayerManager m_PlayerManager;
     mc::world::World m_World;
-    InventoryManager m_Inventories;
-    std::shared_ptr<WorldGraph> m_Graph;
+    mc::inventory::InventoryManager m_Inventories;
+    mc::inventory::Hotbar m_Hotbar;
+    std::unique_ptr<WorldGraph> m_Graph;
 
     bool m_Connected;
 
 public:
-    GameClient();
+    GameClient(mc::protocol::Version version = mc::protocol::Version::Minecraft_1_11_2);
     ~GameClient();
 
     void OnSocketStateChange(mc::network::Socket::Status newState);
@@ -35,10 +37,11 @@ public:
     mc::entity::EntityManager* GetEntityManager() { return &m_EntityManager; }
     mc::core::PlayerManager* GetPlayerManager() { return &m_PlayerManager; }
     mc::world::World* GetWorld() { return &m_World; }
-    InventoryManager* GetInventories() { return &m_Inventories; }
+    mc::inventory::InventoryManager* GetInventories() { return &m_Inventories; }
 
-    std::shared_ptr<Inventory> GetInventory() { return m_Inventories.GetInventory(0); }
-    std::shared_ptr<WorldGraph> GetGraph() { return m_Graph; }
+    mc::inventory::Inventory* GetInventory() { return m_Inventories.GetInventory(0); }
+    mc::inventory::Hotbar& GetHotbar() { return m_Hotbar; }
+    WorldGraph* GetGraph() { return m_Graph.get(); }
 };
 
 #endif
