@@ -80,12 +80,16 @@ void Pathfinder::SmoothPath() {
         std::size_t length = (std::size_t)direction.Length() + 1;
         direction.Normalize();
 
-        Vector3d next = ToVector3d(nodes[index + 1]->GetPosition()) + Vector3d(0.5, 0, 0.5);
-        if (from == next + Vector3d(0, 1, 0)) {
-            // Skip this one entirely because the block directly below is in the path and the bot will fall on it.
-            // This fixes the bug where the bot has to jump in the air to reach the block after touching ground.
-            index += 2;
-            continue;
+        bool hasNext = index < nodes.size() - 2;
+
+        if (hasNext) {
+            Vector3d next = ToVector3d(nodes[index + 1]->GetPosition()) + Vector3d(0.5, 0, 0.5);
+            if (from == next + Vector3d(0, 1, 0)) {
+                // Skip this one entirely because the block directly below is in the path and the bot will fall on it.
+                // This fixes the bug where the bot has to jump in the air to reach the block after touching ground.
+                index += 2;
+                continue;
+            }
         }
 
         if (from.y != to.y || IsNearBlocks(from) || IsNearBlocks(to)) {
@@ -94,7 +98,7 @@ void Pathfinder::SmoothPath() {
             CastResult result = RayCast(m_Client->GetWorld(), m_Client->GetGraph(), from, direction, length);
             if (!result.full) {
                 output.push_back(nodes[index - 1]);
-            } else {
+            } else if (hasNext) {
                 Vector3d nextPos = ToVector3d(nodes[index + 1]->GetPosition()) + Vector3d(0.5, 0, 0.5);
                 Vector3d nextDir = Vector3Normalize(nextPos - from);
 

@@ -52,7 +52,13 @@ bool WorldGraph::IsWalkable(Vector3i pos) const {
     mc::block::BlockPtr aBlock = world->GetBlock(pos + Vector3i(0, 1, 0)).GetBlock();
     mc::block::BlockPtr bBlock = world->GetBlock(pos - Vector3i(0, 1, 0)).GetBlock();
 
-    return checkBlock && !checkBlock->IsSolid() && aBlock && !aBlock->IsSolid() && bBlock && bBlock->IsSolid();
+    // Current block is solid, so it's not walkable.
+    if (checkBlock && checkBlock->IsSolid()) return false;
+    // Above block is solid, so it's not walkable
+    if (aBlock && aBlock->IsSolid()) return false;
+
+    // Below block must be solid
+    return bBlock && bBlock->IsSolid();
 }
 
 int WorldGraph::IsSafeFall(Vector3i pos) const {
@@ -94,11 +100,11 @@ WorldGraph::~WorldGraph() {
 }
 
 void WorldGraph::OnChunkLoad(mc::world::ChunkPtr chunk, const mc::world::ChunkColumnMetadata& meta, u16 yIndex) {
-    for (s32 i = 0; i < 16; ++i) {
-        if (meta.sectionmask & (1 << i)) {
-            m_BuildQueue.Push(Vector3i(meta.x, i, meta.z));
-        }
-    }
+    //for (s32 i = 0; i < 16; ++i) {
+        //if (meta.sectionmask & (1 << i)) {
+            m_BuildQueue.Push(Vector3i(meta.x, yIndex, meta.z));
+        //}
+    //}
 
     // todo: invalidate null chunks
 }
@@ -119,7 +125,6 @@ void WorldGraph::OnChunkUnload(mc::world::ChunkColumnPtr chunk) {
     }
     
     // todo: Invalidate the nodes in the chunk
-    
 }
 
 void WorldGraph::OnBlockChange(Vector3i position, mc::block::BlockState newBlock, mc::block::BlockState oldBlock) {
@@ -203,7 +208,7 @@ void WorldGraph::ProcessQueue() {
     if (!col) return;
 
     mc::world::ChunkPtr chunk = (*col)[(std::size_t)current.y];
-    if (!chunk) return;
+    //if (!chunk) return;
 
     m_ProcessedChunks.push_back(current);
 
@@ -234,8 +239,8 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
 
     mc::block::BlockPtr checkBlock = world->GetBlock(checkPos).GetBlock();
 
-    // Skip because it's not loaded yet or it's solid
-    if (!checkBlock || checkBlock->IsSolid()) return links;   
+    // Skip because it's solid
+    if (checkBlock && checkBlock->IsSolid()) return links;   
 
     if (IsWalkable(checkPos)) {
         for (Vector3i direction : directions) {
@@ -264,7 +269,7 @@ std::vector<WorldGraph::Link> WorldGraph::ProcessBlock(Vector3i checkPos) {
             Vector3i fallPos = checkPos - Vector3i(0, i + 1, 0);
 
             mc::block::BlockPtr block = world->GetBlock(fallPos).GetBlock();
-            if (!block || block->IsSolid()) break;
+            if (block && block->IsSolid()) break;
 
             links.emplace_back(current, fallPos, 1.0f);
 
