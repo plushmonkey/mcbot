@@ -16,17 +16,17 @@ using namespace chi;
 void ChiBot::RegisterComponents(BotUpdate* update) {
     GameClient* client = update->GetClient();
 
-    auto jump = std::make_shared<JumpComponent>(client->GetWorld(), 200);
-    update->AddComponent(jump);
+    auto jump = std::make_unique<JumpComponent>(client->GetWorld(), 200);
+    update->AddComponent(std::move(jump));
 
-    auto targeting = std::make_shared<TargetingComponent>();
-    update->AddComponent(targeting);
+    auto targeting = std::make_unique<TargetingComponent>();
+    update->AddComponent(std::move(targeting));
 
-    auto stuck = std::make_shared<StuckComponent>(client->GetDispatcher(), mc::Vector3d(100, 0, 100), 5);
-    update->AddComponent(stuck);
+    auto stuck = std::make_unique<StuckComponent>(client->GetDispatcher(), mc::Vector3d(100, 0, 100), 5);
+    update->AddComponent(std::move(stuck));
 
-    auto effect = std::make_shared<EffectComponent>(client->GetDispatcher());
-    update->AddComponent(effect);
+    auto effect = std::make_unique<EffectComponent>(client->GetDispatcher());
+    update->AddComponent(std::move(effect));
 }
 
 void ChiBot::CreateDecisionTree(BotUpdate* update, bool mystic) {

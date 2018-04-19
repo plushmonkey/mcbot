@@ -8,11 +8,12 @@ using mc::Vector3i;
 using mc::ToVector3i;
 
 bool AttackAction::SelectItem(s32 id) {
-    std::shared_ptr<Inventory> inventory = m_Client->GetInventory();
+    mc::inventory::Inventory* inventory = m_Client->GetInventory();
+    mc::inventory::Hotbar& hotbar = m_Client->GetHotbar();
 
-    mc::inventory::Slot* slot = inventory->GetSlot(inventory->GetSelectedHotbarSlot() + Inventory::HOTBAR_SLOT_START);
+    mc::inventory::Slot& slot = hotbar.GetCurrentItem();
 
-    if (!slot || slot->GetItemId() != id) {
+    if (slot.GetItemId() != id) {
         s32 itemIndex = inventory->FindItemById(id);
 
         std::cout << "Selecting item id " << id << std::endl;
@@ -23,8 +24,8 @@ bool AttackAction::SelectItem(s32 id) {
             std::cout << "Item is in index " << itemIndex << std::endl;
         }
 
-        s32 hotbarIndex = itemIndex - Inventory::HOTBAR_SLOT_START;
-        m_Client->GetInventory()->SelectHotbarSlot(hotbarIndex);
+        s32 hotbarIndex = itemIndex - mc::inventory::Inventory::HOTBAR_SLOT_START;
+        hotbar.SelectSlot(hotbarIndex);
     }
 
     return true;
@@ -34,7 +35,7 @@ bool AttackAction::CanAttack() {
     s64 time = util::GetTime();
 
     auto targeting = GetActorComponent(m_Client, TargetingComponent);
-
+    
     mc::core::PlayerPtr targetPlayer = m_Client->GetPlayerManager()->GetPlayerByEntityId(targeting->GetTargetEntity());
     if (!targetPlayer) return false;
 
@@ -64,8 +65,8 @@ void AttackAction::Act() {
     if (!entity) return;
 
     if (m_Slot != -1) {
-        if (m_Client->GetInventory()->GetSelectedHotbarSlot() != m_Slot) {
-            m_Client->GetInventory()->SelectHotbarSlot(m_Slot);
+        if (m_Client->GetHotbar().GetSelectedSlot() != m_Slot) {
+            m_Client->GetHotbar().SelectSlot(m_Slot);
             return;
         }
     }

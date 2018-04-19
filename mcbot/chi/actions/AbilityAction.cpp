@@ -4,6 +4,7 @@
 #include "../../components/PhysicsComponent.h"
 #include "../../components/TargetingComponent.h"
 #include "../../components/EffectComponent.h"
+#include <mclib/block/Sign.h>
 
 using mc::Vector3d;
 using mc::Vector3i;
@@ -36,7 +37,8 @@ bool SwiftKickAction::Attack(mc::entity::EntityPtr entity) {
         (float)physics->GetOrientation() * 180.0f / 3.14159f, 0.0f, false);
     m_Client->GetConnection()->SendPacket(&positionPacket);
 
-    return MeleeAction::Attack(entity);
+    MeleeAction::Attack(entity);
+    return true;
 }
 
 bool LungeAction::ShouldUse() {
@@ -155,7 +157,7 @@ bool JoinArenaAction::FindSign() {
         for (mc::block::BlockEntityPtr blockEntity : blockEntities) {
             if (blockEntity->GetType() != mc::block::BlockEntityType::Sign) continue;
 
-            std::shared_ptr<mc::block::SignBlockEntity> sign = std::static_pointer_cast<mc::block::SignBlockEntity>(blockEntity);
+            std::shared_ptr<mc::block::Sign> sign = std::static_pointer_cast<mc::block::Sign>(blockEntity);
 
             for (std::size_t i = 0; i < 4; ++i) {
                 std::wstring text = sign->GetText(i);
@@ -221,7 +223,7 @@ void JoinArenaAction::Act() {
             using namespace mc::protocol::packets::out;
             std::cout << "Sending sign click" << std::endl;
 
-            PlayerBlockPlacementPacket packet(m_SignPosition, 4, mc::Hand::Main, mc::Vector3f(0.5f, 0.0f, 0.5f));
+            PlayerBlockPlacementPacket packet(m_SignPosition, mc::Face::West, mc::Hand::Main, mc::Vector3f(0.5f, 0.0f, 0.5f));
             m_Client->GetConnection()->SendPacket(&packet);
             m_LastClick = time;
         }

@@ -1,12 +1,23 @@
 #include "BotUpdate.h"
 #include "chi/ChiBot.h"
+#include "components/EffectComponent.h"
+#include "components/JumpComponent.h"
+#include "components/TargetingComponent.h"
+#include <mclib/util/VersionFetcher.h>
 
 using mc::Vector3d;
 using mc::Vector3i;
 using mc::ToVector3d;
 using mc::ToVector3i;
 
-const bool MysticEmpire = false;
+namespace {
+
+const std::string name = "testplayer";
+const std::string password = "pw";
+const std::string server = "127.0.0.1";
+const u16 port = 25565;
+
+} // ns
 
 class Logger : public mc::protocol::packets::PacketHandler {
 private:
@@ -68,13 +79,12 @@ int main(void) {
     BotUpdate update(&game);
     Logger logger(&game, game.GetDispatcher());
     
-    chi::ChiBot::RegisterComponents(&update);
-    chi::ChiBot::CreateDecisionTree(&update, MysticEmpire);
+    bool mystic = server == "play.mysticempire.net";
 
-    if (MysticEmpire)
-        game.login("play.mysticempire.net", 25565, "email", "password");
-    else
-        game.login("127.0.0.1", 25565, "bot", "pw");
+    chi::ChiBot::RegisterComponents(&update);
+    chi::ChiBot::CreateDecisionTree(&update, mystic);
+
+    game.login(server, port, name, password);
     
     game.run();
 
